@@ -1,0 +1,34 @@
+// Override Pico CSS variables (optional)
+@use "@picocss/pico/scss/pico" with ($theme-color: "blue",
+  $enable-classes: true,
+
+);
+
+// Custom CSS variables (override Pico defaults if needed)
+:root,
+:host {
+  --pico-block-spacing-vertical: 0.5em;
+  --pico-block-spacing-horizontal: 0.5em;
+}
+
+[role=group] [type=submit] {
+  --pico-form-element-spacing-horizontal: 1rem;
+}
+
+.button-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  column-gap: 16px;
+  row-gap: 8px;
+  justify-content: start;
+}
+
+article.selected {
+  border: 2px solid green;
+  background: #eaffea;
+}
+
+article.pending {
+  border: 2px solid orange;
+  background: #fff3e0;
+}

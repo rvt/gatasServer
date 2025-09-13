@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>GA/TAS Server</title>
+
+  <link rel="stylesheet" href="css/styles.scss" />
+</head>
+
+<body id="body" class="overflow-x-hidden">
+  <script>
+    if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      document.body.classList.add("dark");
+    }
+  </script>
+
+  <main class="container">
+    <gatasserver-main></gatasserver-main>
+  </main>
+
+  <!-- <dialog open>
+            <article>
+                <header>
+                    <button aria-label="Close" rel="prev"></button>
+                    <p>
+                        <strong>GA/TAS Server up and running!</strong>
+                    </p>
+                </header>
+                <p>
+                    We're excited to have you join on our server.<br />
+                    Please go to <a href="http://github.com/rvt/openace" target="_blank">github.com/rvt/openace</a> to learn more.
+                </p>
+
+            </article>
+        </dialog> -->
+</body>
+
+<script type="module">
+  import { El } from "@frameable/el"
+  import store from "./components/store";
+  import "./components/aircraft"
+
+  class GaTasMain extends El {
+    created() {
+      this.state = this.$observable({});
+    }
+
+    mounted() {
+      const form = this.shadowRoot?.getElementById("gatasForm") || this.querySelector("#gatasForm");
+
+      if (form) {
+        form.addEventListener("submit", (e) => {
+          e.preventDefault();
+          const gatasId = form.elements["gatasId"].value.trim();
+          if (!gatasId) return;
+
+          // update state and set hash
+          window.location.hash = encodeURIComponent(gatasId);
+          store.init(parseInt(gatasId, 16));
+        });
+      }
+
+      setTimeout(() => {
+        store.init(parseInt(parseInt(window.location.hash.substring(1), 16)));
+      }, 50);
+    }
+
+    _selected(mode_s) {
+      // debugger
+      // store.changeAircraft(mode_s)
+      // store.pollStatus();
+    }
+
+    render(html) {
+      return html`
+            <form id="gatasForm">
+              <fieldset role="group">
+                <input name="gatasId" type="gatasId" placeholder="GA/TAS ID" autocomplete="" value="${store.state.gatasId.toString(16).toUpperCase()}"/>
+                <input type="submit" value="Find GA/TAS" />
+              </fieldset>
+            </form>
+
+            <sub>
+              My GA/TAS IP: <a href="http://${store.state.gatasIp}" target="_blank">http://${store.state.gatasIp}/</a>
+            </sub>
+
+            ${store.state.reConfiguring ? html`<progress></progress>` : html`<progress value=0" max="100"></progress>`}
+            
+            <div class="button-container">
+              ${store.state.icaoAddressList.map(item => html`        
+                <aircraft-config key=${item} modes=${item} onselect=${(mode_s) => this._selected(mode_s)}></aircraft-config>
+              `)}
+            </div>
+          `;
+    }
+  }
+  customElements.define("gatasserver-main", GaTasMain);
+</script>
+
+</html>

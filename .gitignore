@@ -1,0 +1,26 @@
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+out/
+
+### VS Code ###
+.vscode/
+
+**/node_modules/
+local/
+.gradle/
+.env
+.idea/
+.kotlin/
+dist/
+.parcel-cache/
+**/resources/static/
+
+*.sh
+local.properties

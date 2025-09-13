@@ -1,0 +1,22 @@
+{
+  "extends": "@parcel/config-default",
+  "compressors": {
+    "*.{html,css,js,svg,map}": [
+      "@parcel/compressor-raw"
+    ],
+    "generate_*": [
+      "@parcel/compressor-raw"
+    ],
+    "*.{json}": [
+      "@parcel/compressor-raw"
+    ]
+  },
+  "transformers": {
+    "*.json": [
+      "@parcel/transformer-raw"
+    ]
+  },
+  "optimizers": {
+    "*.js": ["@parcel/optimizer-terser"]
+  }
+}

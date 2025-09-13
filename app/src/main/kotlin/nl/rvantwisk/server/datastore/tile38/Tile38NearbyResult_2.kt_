@@ -1,0 +1,94 @@
+package nl.rvantwisk.server.datastore
+
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.decodeFromJsonElement
+import kotlinx.serialization.json.double
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.jsonPrimitive
+import nl.rvantwisk.gatas.extensions.ADDRESS_TYPE
+import nl.rvantwisk.gatas.extensions.AIRCRAFT_CATEGORY
+import nl.rvantwisk.gatas.extensions.AIRCRAFT_POSITION_TYPE_V1
+import nl.rvantwisk.gatas.extensions.ALTITUDE
+import nl.rvantwisk.gatas.extensions.CALL_SIGN
+import nl.rvantwisk.gatas.extensions.COBS_MINIMAL_EXTRA_BYTES
+import nl.rvantwisk.gatas.extensions.CRC16_BYTE_SIZE
+import nl.rvantwisk.gatas.extensions.CobsByteArray
+import nl.rvantwisk.gatas.extensions.DATA_SOURCE
+import nl.rvantwisk.gatas.extensions.MAX_CALLSIGN_LENGTH
+import nl.rvantwisk.gatas.extensions.SPEED
+import nl.rvantwisk.gatas.extensions.TRACK
+import nl.rvantwisk.gatas.extensions.TURN_RATE
+import nl.rvantwisk.gatas.extensions.VERTICAL_RATE
+import nl.rvantwisk.gatas.extensions.combineBuffers
+import nl.rvantwisk.gatas.math.getDistanceRelNorthRelEastDouble
+import nl.rvantwisk.gatas.models.AircraftPosition
+import nl.rvantwisk.server.extensions.safeGet
+import kotlin.math.roundToInt
+import kotlin.math.roundToLong
+
+
+/*
+* Encode a Tile38NearbyResult to cobs
+* Application -> GATAS
+*/
+@OptIn(ExperimentalSerializationApi::class)
+fun Tile38NearbyResult.toCobs(
+    ownshipLatitude: Double,
+    ownshipLongitude: Double,
+    ellipsoidHeight: Int
+): ByteArray {
+    val RAW_ARRAY_SIZE = 34
+    val speedIdx = this.fields.indexOf(SPEED)
+    val trackIdx = this.fields.indexOf(TRACK)
+    val turnIdx = this.fields.indexOf(TURN_RATE)
+    val vrateIdx = this.fields.indexOf(VERTICAL_RATE)
+    val altIdx = this.fields.indexOf(ALTITUDE)
+    val acaIdx = this.fields.indexOf(AIRCRAFT_CATEGORY)
+    val atyIdx = this.fields.indexOf(ADDRESS_TYPE)
+    val dsrcIdx = this.fields.indexOf(DATA_SOURCE)
+    val jsonIdx = this.fields.indexOf("json")
+    val callSignIndx = this.fields.indexOf(CALL_SIGN)
+
+    val cobsData = this.objects.map {
+
+        val aircraft = json.decodeFromJsonElement<AircraftPosition>(it.fields[jsonIdx])
+
+        val callSignBytes = it.fields[callSignIndx].jsonPrimitive.content.take(MAX_CALLSIGN_LENGTH)
+            .encodeToByteArray()
+        val cobsBuffer =
+            CobsByteArray((RAW_ARRAY_SIZE + COBS_MINIMAL_EXTRA_BYTES) + callSignBytes.size)
+        val rel = getDistanceRelNorthRelEastDouble(
+            ownshipLatitude,
+            ownshipLongitude,
+            it.coordinate.coordinates[1],
+            it.coordinate.coordinates[0]
+        )
+
+        // @formatter:off
+        cobsBuffer.put1(AIRCRAFT_POSITION_TYPE_V1)
+        cobsBuffer.putInt3(it.id)
+        cobsBuffer.put1((it.fields[atyIdx].jsonPrimitive.int.toByte())) // Address Type
+        cobsBuffer.put1((it.fields[dsrcIdx].jsonPrimitive.int.toByte())) // Data Source
+        cobsBuffer.putInt4((it.coordinate.coordinates[1] * 1E7).roundToLong().coerceIn(Int.MIN_VALUE.toLong(), Int.MAX_VALUE.toLong()).toInt())
+        cobsBuffer.putInt4((it.coordinate.coordinates[0] * 1E7).roundToLong().coerceIn(Int.MIN_VALUE.toLong(), Int.MAX_VALUE.toLong()).toInt())
+        cobsBuffer.put2((it.fields.safeGet<Int>(altIdx, 0) + 100).coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort())
+        cobsBuffer.put1((it.fields.safeGet<Double>(trackIdx, 0.0) / (360.0 / 255.0)).toInt().coerceIn(0, 255).toByte())
+        cobsBuffer.put1((it.fields.safeGet<Double>(turnIdx, 0.0) * 5).roundToInt().coerceIn(Byte.MIN_VALUE.toInt(),Byte.MAX_VALUE.toInt()).toByte())
+        cobsBuffer.put2((it.fields.safeGet<Double>(speedIdx, 0.0) * 10).roundToInt().coerceIn(0, 65535).toShort())
+        cobsBuffer.put2((it.fields.safeGet<Double>(vrateIdx, 0.0) * 100).roundToInt().coerceIn(Short.MIN_VALUE.toInt(),Short.MAX_VALUE.toInt()).toShort())
+        cobsBuffer.put1(it.fields.safeGet<Int>(acaIdx, 0).coerceIn(0, 64).toByte()) // aircraftType
+        cobsBuffer.putArray(callSignBytes)
+        cobsBuffer.putInt3(rel.relNorthMeter.toInt().coerceIn(-(1 shl 23), (1 shl 23) - 1))
+        cobsBuffer.putInt3(rel.relEastMeter.toInt().coerceIn(-(1 shl 23), (1 shl 23) - 1))
+        cobsBuffer.put2(rel.bearing.toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort())
+        cobsBuffer.put2(rel.distance.toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort())
+        // @formatter:on
+
+        // Dear god I hate Kotlin.. No, this really does not need a return
+        cobsBuffer.getCobs()
+    }.combineBuffers(CRC16_BYTE_SIZE)
+
+    return cobsData
+}
+

@@ -1,0 +1,99 @@
+[versions]
+agp = "8.5.2"
+android-minSdk = "24"
+android-compileSdk = "34"
+
+junit = "4.13.2"
+koin-version = "3.5.6"
+kotlin-version = "2.1.10"
+ktor-version = "3.2.2"
+logback-version =  "1.5.18"
+prometheus-version = "1.6.13"
+kermitVersion = "2.0.6"
+lettuce-core = "6.2.0.RELEASE"
+protobuf-version = "3.25.8" #// ""4.31.1"
+grpc-kotlin-version = "1.4.3"
+okio-version = "3.16.0"
+kotlinx-coroutines-reactive = "1.10.2"
+kotlinx-coroutines-core = "1.10.2"
+kotlinx-serialization-json = "1.9.0"
+geok-version = "1.2.2"
+
+[libraries]
+geok = { module = "io.github.piruin:geok", version.ref = "geok-version" }
+
+kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin-version" }
+junit = { module = "junit:junit", version.ref = "junit" }
+# Dependency Injection
+ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor-version" }
+ktor-server-metrics-micrometer = { module = "io.ktor:ktor-server-metrics-micrometer", version.ref = "ktor-version" }
+
+
+# Measurements
+micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-prometheus", version.ref = "prometheus-version" }
+
+# ktor/serialisation
+ktor-server-rate-limiting = { module = "io.github.flaxoos:ktor-server-rate-limiting", version = "2.2.1" }
+ktor-server-thymeleaf = { module = "io.ktor:ktor-server-thymeleaf", version.ref = "ktor-version" }
+ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor-version" }
+ktor-server-config-yaml = { module = "io.ktor:ktor-server-config-yaml", version.ref = "ktor-version" }
+ktor-server-test-host = { module = "io.ktor:ktor-server-test-host", version.ref = "ktor-version" }
+ktor-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor-version" }
+ktor-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor-version" }
+ktor-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor-version" }
+ktor-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor-version" }
+ktor-network = { module = "io.ktor:ktor-network", version.ref = "ktor-version" }
+ktor-contentNegotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor-version" }
+ktor-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor-version" }
+ktor-compression = { module = "io.ktor:ktor-server-compression", version.ref = "ktor-version" }
+ktor-client-encoding-jvm = { module = "io.ktor:ktor-client-encoding-jvm", version.ref = "ktor-version" }
+ktor-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktor-version" }
+
+
+# Others
+logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback-version" }
+koin-logger-slf4j = { module = "io.insert-koin:koin-logger-slf4j", version.ref = "koin-version" }
+koin-ktor = { module = "io.insert-koin:koin-ktor", version.ref = "koin-version" }
+koin-android = { module = "io.insert-koin:koin-android", version.ref = "koin-version" }
+koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin-version" }
+
+kermit = { module = "co.touchlab:kermit", version.ref = "kermitVersion" }
+letuce-core = { module = "io.lettuce:lettuce-core", version.ref = "lettuce-core" }
+kotlinx-coroutines-reactive = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactive", version.ref = "kotlinx-coroutines-reactive" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization-json" }
+
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines-core" }
+
+
+# Test
+kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin-version" }
+
+# gRPC
+grpc-protobuf = { group = "io.grpc", name = "grpc-protobuf", version = "1.62.2" }
+grpc-protobuf-lite = { group = "io.grpc", name = "grpc-protobuf-lite", version = "1.62.2" }
+grpc-netty = { group = "io.grpc", name = "grpc-netty", version = "1.62.2" }
+grpc-netty-shaded = { group = "io.grpc", name = "grpc-netty-shaded", version = "1.62.2" }
+grpc-okhttp = { group = "io.grpc", name = "grpc-okhttp", version = "1.62.2" }
+grpc-testing = { group = "io.grpc", name = "grpc-testing", version = "1.62.2" }
+grpc-stub = { group = "io.grpc", name = "grpc-stub", version = "1.62.2" }
+grpc-kotlin-stub = { group = "io.grpc", name = "grpc-kotlin-stub", version.ref = "grpc-kotlin-version" }
+
+protobuf-kotlin = { group = "com.google.protobuf", name = "protobuf-kotlin", version = "3.25.8" }
+protobuf-java-util = { group = "com.google.protobuf", name = "protobuf-java-util", version.ref = "protobuf-version" }
+protobuf-java = { group = "com.google.protobuf", name = "protobuf-java", version.ref = "protobuf-version" }
+okio = { group = "com.squareup.okio", name = "okio", version.ref = "okio-version" }
+okio-jvm = { group = "com.squareup.okio", name = "okio-jvm", version.ref = "okio-version" }
+
+
+
+[plugins]
+androidLibrary = { id = "com.android.library", version.ref = "agp" }
+kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin-version" }
+vanniktech-mavenPublish = { id = "com.vanniktech.maven.publish", version = "0.29.0" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin-version" }
+
+ktor = { id = "io.ktor.plugin", version.ref = "ktor-version" }
+protobuf = { id = "com.google.protobuf", version = "0.9.5" }
+
+[bundles]
+ktor = ["ktor-core", "ktor-contentNegotiation", "ktor-json", "ktor-logging"]
