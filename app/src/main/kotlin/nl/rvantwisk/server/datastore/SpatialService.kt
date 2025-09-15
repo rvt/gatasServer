@@ -60,14 +60,15 @@ import nl.rvantwisk.server.metar.model.MetarH3
 import nl.rvantwisk.server.metar.model.toH3
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import org.koin.core.parameter.parametersOf
 import org.koin.core.qualifier.named
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.full.primaryConstructor
 import kotlin.time.ExperimentalTime
 
-private val log = Logger.withTag(SpatialService::class.simpleName ?: "SpatialService")
 
 class SpatialService : KoinComponent {
+  private val log: Logger by inject { parametersOf(SpatialService::class.simpleName!!) }
 
   private val redisClientRead: StatefulRedisConnection<String, String> by inject(named("tile38ReadConnection"))
   private val redisClientWrite: StatefulRedisConnection<String, String> by inject(named("tile38writeConnection"))
@@ -293,11 +294,9 @@ class SpatialService : KoinComponent {
         .add(DATA_SOURCE).add("gatas")
 //        .add("FIELD").add("json").add(json.encodeToString(OwnshipAircraftConfiguration.serializer(), data))
 
-      val returned = coroutines.dispatch(
+      coroutines.dispatch(
         FSET(), StatusOutput(StringCodec.UTF8), cmdArgs
       ).toList()
-
-
     }
   }
 

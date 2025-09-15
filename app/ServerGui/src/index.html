@@ -21,21 +21,6 @@
     <gatasserver-main></gatasserver-main>
   </main>
 
-  <!-- <dialog open>
-            <article>
-                <header>
-                    <button aria-label="Close" rel="prev"></button>
-                    <p>
-                        <strong>GA/TAS Server up and running!</strong>
-                    </p>
-                </header>
-                <p>
-                    We're excited to have you join on our server.<br />
-                    Please go to <a href="http://github.com/rvt/openace" target="_blank">github.com/rvt/openace</a> to learn more.
-                </p>
-
-            </article>
-        </dialog> -->
 </body>
 
 <script type="module">
@@ -64,7 +49,11 @@
       }
 
       setTimeout(() => {
-        store.init(parseInt(parseInt(window.location.hash.substring(1), 16)));
+        const gatasId = window.location.hash.substring(1);
+        if (gatasId && gatasId.length>0) {
+          store.init(parseInt(parseInt(window.location.hash.substring(1), 16)));
+          this.$refs.gatasId.value = store.state.gatasId.toString(16).toUpperCase();
+        }
       }, 50);
     }
 
@@ -78,19 +67,26 @@
       return html`
             <form id="gatasForm">
               <fieldset role="group">
-                <input name="gatasId" type="gatasId" placeholder="GA/TAS ID" autocomplete="" value="${store.state.gatasId.toString(16).toUpperCase()}"/>
+                <input name="gatasId" ref="gatasId" type="gatasId" placeholder="GA/TAS ID" autocomplete="" />
                 <input type="submit" value="Find GA/TAS" />
               </fieldset>
             </form>
 
-            <sub>
-              My GA/TAS IP: <a href="http://${store.state.gatasIp}" target="_blank">http://${store.state.gatasIp}/</a>
-            </sub>
+            <article>
+              <small>
+                <strong>My GA/TAS IP:</strong>
+                ${store.state.gatasIp
+                  ? html`<a href="http://${store.state.gatasIp}" target="_blank">
+                          ${store.state.gatasIp}
+                        </a>`
+                  : html`not found`}
+                &nbsp;|&nbsp;
+                <a href="http://gatas.local" target="_blank">gatas.local</a>
+              </small>
+            </article>
 
-            ${store.state.reConfiguring ? html`<progress></progress>` : html`<progress value=0" max="100"></progress>`}
-            
             <div class="button-container">
-              ${store.state.icaoAddressList.map(item => html`        
+              ${store.state.icaoAddressList.map(item => html`
                 <aircraft-config key=${item} modes=${item} onselect=${(mode_s) => this._selected(mode_s)}></aircraft-config>
               `)}
             </div>

@@ -48,11 +48,12 @@ class AircraftModule extends El {
       <article
         class="${isCurrent && 'selected'} ${isPending && 'pending'}"
         onclick=${() => this._select(this.state.aircraft?.icaoAddress)}>
+        ${isPending ? html`<progress></progress>` : html`<progress value=0" max="100"></progress>`}
         <div>${this.state.aircraft?.registration}</div>
         <div>${this.state.aircraft?.icaoType}</div>
         <div style="justify-content: space-between;display: flex;">
           <div>${this.state.aircraft?.icaoAddressHex}</div>
-          <div>${isCurrent && '✔'}${isPending && '⏳'}</div>
+          <div>${isCurrent && '✔'}${isPending && '&nbsp;'}</div>
         </div>
       </article>
     `;

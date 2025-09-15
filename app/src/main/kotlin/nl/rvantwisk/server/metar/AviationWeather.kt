@@ -20,12 +20,12 @@ import nl.rvantwisk.server.metar.model.Metar
 import nl.rvantwisk.server.metar.model.Response
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import org.koin.core.parameter.parametersOf
 import org.koin.core.qualifier.named
 import java.util.zip.GZIPInputStream
 
-private val log = Logger.withTag(MetarUpdateService::class.simpleName ?: "MetarUpdateService")
-
 class MetarUpdateService : KoinComponent {
+  private val log: Logger by inject { parametersOf(MetarUpdateService::class.simpleName!!) }
 
   private val httpClient: HttpClient by inject(named("aviationWeatherClient"));
   private val tile38: SpatialService by inject(named("SpatialService"))

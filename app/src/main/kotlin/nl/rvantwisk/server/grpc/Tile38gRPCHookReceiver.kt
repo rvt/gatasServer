@@ -16,14 +16,15 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import nl.rvantwisk.server.datastore.tile38.models.Tile38GrpcObject
+import nl.rvantwisk.server.flowservices.KtorClient.getKoin
 import nl.rvantwisk.server.server.grpc.chunkedTimed
+import org.koin.core.component.KoinComponent
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Duration.Companion.milliseconds
 
-private val log = Logger.withTag(Tile38gRPCHookReceiver::class.simpleName ?: "Tile38gRPCHookReceiver")
+private val log =  getKoin().get<Logger>().withTag(Tile38gRPCHookReceiver::class.simpleName!!)
 
-class Tile38gRPCHookReceiver(private val port: Int) {
-
+class Tile38gRPCHookReceiver(private val port: Int) : KoinComponent {
 
     @OptIn(ExperimentalSerializationApi::class)
     val incomingGeoEvents = MutableSharedFlow<Tile38GrpcObject>(extraBufferCapacity = 500)

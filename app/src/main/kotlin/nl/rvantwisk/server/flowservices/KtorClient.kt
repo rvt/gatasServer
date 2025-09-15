@@ -1,6 +1,5 @@
 package nl.rvantwisk.server.flowservices
 
-import co.touchlab.kermit.Logger
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.DefaultRequest
 import io.ktor.client.plugins.HttpTimeout
@@ -15,8 +14,6 @@ import io.ktor.serialization.kotlinx.xml.DefaultXml
 import kotlinx.serialization.json.Json
 import nl.adaptivity.xmlutil.serialization.XML
 import org.koin.core.component.KoinComponent
-
-private val log = Logger.withTag("KtorClient")
 
 object KtorClient : KoinComponent {
 

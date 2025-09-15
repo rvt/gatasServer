@@ -28,15 +28,15 @@ import nl.rvantwisk.server.datastore.SpatialService
 import nl.rvantwisk.server.extensions.serializeAircraftPositionsV1
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import org.koin.core.parameter.parametersOf
 import org.koin.core.qualifier.named
-import kotlin.text.HexFormat
 
-
-private val log = Logger.withTag(UdpAircraftService::class.simpleName ?: "UdpAircraftService")
 
 class UdpAircraftService : KoinComponent {
-  private val rateLimiter: PerSenderRateLimiter by inject(named("TokenBucketRateLimiter"))
-  private val uniqueIdRateLimiter: UniqueIdRateLimiter by inject(named("UniqueIdRateLimiter"))
+  private val rateLimiter: SimpleRateLimiter by inject(named("SimpleRateLimiter"))
+
+  private val log: Logger by inject { parametersOf(UdpAircraftService::class.simpleName!!) }
+
   private val tile38: SpatialService by inject(named("SpatialService"))
   private val metarService: MetarService by inject(named("MetarService"))
   private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -85,6 +85,11 @@ class UdpAircraftService : KoinComponent {
   @OptIn(ExperimentalStdlibApi::class)
   private suspend fun udpRequestHandler(data: ByteArray, sender: SocketAddress): ByteArray? {
 
+    if (!rateLimiter.tryConsume(sender as InetSocketAddress)) {
+      log.w { "Client rate limited ${sender}" }
+      return null
+    }
+
     var returnedData = ByteArray(0)
     var lat = 0.0
     var lon = 0.0
@@ -103,22 +108,18 @@ class UdpAircraftService : KoinComponent {
           lat = ownship.latitude
           lon = ownship.longitude
 
-          if (!rateLimiter.tryConsume(ownship, sender as InetSocketAddress)) {
-            log.w { "Client rate limited $sender" }
-          } else {
-            tile38.updateOwnship(ownship)
+          tile38.updateOwnship(ownship)
 
-            val aircrafts = tile38.getAircraft(
-              ownship.latitude,
-              ownship.longitude,
-              ownship.ellipsoidHeight
-            ).map {
-              it.updateEstimGeomAltitude(metarCache.getMetar(it.latitude, it.longitude))
-              it
-            }
-
-            returnedData += aircrafts.serializeAircraftPositionsV1()
+          val aircrafts = tile38.getAircraft(
+            ownship.latitude,
+            ownship.longitude,
+            ownship.ellipsoidHeight
+          ).map {
+            it.updateEstimGeomAltitude(metarCache.getMetar(it.latitude, it.longitude))
+            it
           }
+
+          returnedData += aircrafts.serializeAircraftPositionsV1()
         }
         continue
       }
@@ -126,11 +127,6 @@ class UdpAircraftService : KoinComponent {
       if (cobsByteArray.peekAhead() == AIRCRAFT_CONFIGURATIONS_V1) {
         runCatching {
           val dataMsg = deserializeAircraftConfigurationV1(cobsByteArray)
-
-          if (!uniqueIdRateLimiter.tryConsume(dataMsg.gatasId)) {
-            log.w { "Client rate limited ${dataMsg.gatasId.toHexString()}" }
-            return null
-          }
 
           tile38.sendAircraftConfig(lat, lon, dataMsg)
           val inDb = tile38.getFieldsMap("fleetConfig", dataMsg.gatasId, listOf("newIcaoAddress"))

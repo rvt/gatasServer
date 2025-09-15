@@ -1,7 +1,6 @@
 package nl.rvantwisk.server.udp
 
 import io.ktor.network.sockets.InetSocketAddress
-import nl.rvantwisk.gatas.models.OwnshipPosition
 import kotlin.math.min
 import kotlin.time.Duration
 
@@ -11,7 +10,7 @@ data class TokenBucket(
 )
 
 interface PerSenderRateLimiter {
-  fun tryConsume(ownship: OwnshipPosition, sender: InetSocketAddress): Boolean
+  fun tryConsume(sender: InetSocketAddress): Boolean
 }
 
 interface PerUniqueRateLimiter {
@@ -30,7 +29,7 @@ class TokenBucketRateLimiter(
     private val refillIntervalNanos = refillInterval.inWholeNanoseconds
 
   @Synchronized
-  override fun tryConsume(ownship: OwnshipPosition, sender: InetSocketAddress): Boolean {
+  override fun tryConsume(sender: InetSocketAddress): Boolean {
         val now = System.nanoTime()
         val bucket = buckets.getOrPut(sender) { TokenBucket(maxTokens, now) }
 
@@ -75,6 +74,26 @@ class UniqueIdRateLimiter(
 
     return if (bucket.tokens > 0) {
       bucket.tokens--
+      true
+    } else {
+      false
+    }
+  }
+}
+
+class SimpleRateLimiter(
+  private val minInterval: Duration // minimum time between requests
+) : PerSenderRateLimiter {
+  private val lastRequestTime = mutableMapOf<InetSocketAddress, Long>()
+  private val minIntervalMillies = minInterval.inWholeMilliseconds
+
+  @Synchronized
+  override fun tryConsume(sender: InetSocketAddress): Boolean {
+    val now = System.currentTimeMillis()
+    val last = lastRequestTime[sender] ?: 0L
+
+    return if (now - last >= minIntervalMillies) {
+      lastRequestTime[sender] = now
       true
     } else {
       false

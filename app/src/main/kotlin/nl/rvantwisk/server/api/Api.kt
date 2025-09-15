@@ -1,6 +1,5 @@
 package nl.rvantwisk.server.api
 
-import io.github.kotlin.fibonacci.nl.rvantwisk.gatas.models.OwnshipAircraftConfiguration
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
@@ -21,7 +20,6 @@ import nl.rvantwisk.server.datastore.SpatialService
 import nl.rvantwisk.server.extensions.toIPv4
 import org.koin.core.qualifier.named
 import org.koin.ktor.ext.inject
-import java.io.File
 
 @OptIn(ExperimentalStdlibApi::class)
 fun Application.configureApi() {

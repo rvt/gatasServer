@@ -1,6 +1,5 @@
 package nl.rvantwisk.server.feeds
 
-import co.touchlab.kermit.Logger
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -15,8 +14,6 @@ import nl.rvantwisk.server.datastore.SpatialService
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.koin.core.qualifier.named
-
-private val log = Logger.withTag(Tile38Updater::class.simpleName ?: "Tile38Updater")
 
 class Tile38Updater : KoinComponent {
 

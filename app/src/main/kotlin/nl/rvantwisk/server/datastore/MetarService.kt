@@ -7,16 +7,16 @@ import nl.rvantwisk.server.STD_QNH
 import nl.rvantwisk.server.metar.model.MetarH3
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import org.koin.core.parameter.parametersOf
 import org.koin.core.qualifier.named
-
-
-private val log = Logger.withTag(MetarService::class.simpleName ?: "MetarService")
 
 interface MetarCache {
   suspend fun getMetar(lat: Double, lon: Double): Double
 }
 
 class MetarService : KoinComponent {
+
+  private val log: Logger by inject { parametersOf(SpatialService::class.simpleName!!) }
 
   private val tile38: SpatialService by inject(named("SpatialService"))
   private val h3: H3Core by inject()

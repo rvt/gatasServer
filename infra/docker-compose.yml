@@ -23,14 +23,20 @@ services:
       - "8080:8080/tcp"
       - "16256:16256/udp"
     restart: unless-stopped
-    
+
   redis:
     container_name: redis
     image: redis:8.2-alpine
     restart: always
     ports:
       - '6379:6379'
-    command: redis-server --save 20 1 --loglevel warning --requirepass QXgxqrsWYihha4pWeldhy2Auu
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    command: >
+      sh -c "exec redis-server
+      --save 20 1
+      --loglevel warning
+      --requirepass $$REDIS_PASSWORD"
     volumes:
       - cache:/data
 
