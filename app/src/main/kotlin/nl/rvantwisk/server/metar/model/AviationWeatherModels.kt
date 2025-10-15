@@ -115,7 +115,8 @@ data class Metar @OptIn(ExperimentalTime::class) constructor(
 //    val wx_string: String?,
 
   @XmlElement(true)
-  val elevation_m: Long
+  // When setting to 0, we will still get an metar, but perhaps their height above sea level is not available
+  val elevation_m: Long = 0
 ) {
   fun qnh() = sea_level_pressure_mb ?: (altim_in_hg!! * 33.86389)
 }

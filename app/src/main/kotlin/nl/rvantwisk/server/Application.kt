@@ -19,5 +19,6 @@ fun Application.module() {
   configureApi()
   configureTile38()
   configureUdpService()
+  configureTcpService()
   configureMetarService()
 }

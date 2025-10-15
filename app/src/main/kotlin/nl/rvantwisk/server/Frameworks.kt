@@ -30,11 +30,14 @@ import nl.rvantwisk.server.feeds.Tile38Updater
 import nl.rvantwisk.server.flowservices.KtorClient
 import nl.rvantwisk.server.flowservices.SimpleLocationService
 import nl.rvantwisk.server.metar.MetarUpdateService
+import nl.rvantwisk.server.tcp.TcpAircraftService
 import nl.rvantwisk.server.udp.PerSenderRateLimiter
 import nl.rvantwisk.server.udp.SimpleRateLimiter
 import nl.rvantwisk.server.udp.TokenBucketRateLimiter
 import nl.rvantwisk.server.udp.UdpAircraftService
 import nl.rvantwisk.server.udp.UniqueIdRateLimiter
+import org.koin.core.component.inject
+import org.koin.core.parameter.parametersOf
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import org.koin.ktor.plugin.Koin
@@ -99,7 +102,10 @@ fun Application.configureFrameworks() {
 //            }
 //          }
 //        }
-        System.getenv("AIRPLANESLIVEKEY") ?: "-"
+        val log: Logger by inject { parametersOf(Application::class.simpleName!!) }
+        val key = System.getenv("AIRPLANESLIVEKEY") ?: "-"
+        key
+        "46dba1b1-5300-4a0d-bb63-1bab4e32fff0"
       }
 
       single<AircraftWebService>(named("AdsbLolService")) {
@@ -130,8 +136,6 @@ fun Application.configureFrameworks() {
       single<SimpleRateLimiter>(named("SimpleRateLimiter")) {
         SimpleRateLimiter(Duration.parse("900ms"))
       }
-
-
 
       // Need a read and write connection separatly
       // https://github.com/redis/lettuce/discussions/1896
@@ -167,6 +171,9 @@ fun Application.configureFrameworks() {
       }
       single<UdpAircraftService> {
         UdpAircraftService()
+      }
+      single<TcpAircraftService> {
+        TcpAircraftService()
       }
 
     })

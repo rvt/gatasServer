@@ -20,6 +20,9 @@ fun List<AircraftPosition>.serializeAircraftPositionsV1(): ByteArray = this.map 
   it.serializeAircraftPositionV1()
 }.combineBuffers(0)
 
+/**
+ *  Long (4Byte) from GATAS and convert it to an IPv4 address
+ */
 fun Long.toIPv4(): String {
   val b4 = (this shr 24 and 0xFFL).toInt()
   val b3 = (this shr 16 and 0xFFL).toInt()

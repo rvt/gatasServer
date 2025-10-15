@@ -50,6 +50,18 @@ fun Application.configureApi() {
       call.respond(Ok())
     }
 
+    /**
+     * Handles GET requests to retrieve aircraft configuration details.
+     *
+     * This endpoint fetches specific configuration fields for a given GATAS ID.
+     * It retrieves data such as options, unique ID, ICAO address(es), and GATAS IP.
+     * The GATAS IP is converted to a standard IPv4 string format, and the ICAO address list
+     * is parsed from a comma-separated string into a list of strings.
+     *
+     * @param gatasId The unique identifier of the GATAS unit, passed as a path parameter.
+     * @return A JSON response containing the aircraft configuration details.
+     *         Returns an error if the `gatasId` parameter is missing or invalid.
+     */
     get("/api/config/aircraftConfiguration/{gatasId}") {
       val gatasId = call.parameters["gatasId"]?.toLong() ?: error("Missing aircraftId")
       val data = spatialService.getFieldsMap(
@@ -72,6 +84,20 @@ fun Application.configureApi() {
   }
 }
 
+/**
+ * Converts a Map<String, Any?> to a JsonObject.
+ *
+ * This extension function iterates over the map entries and constructs a JsonObject.
+ * It supports common primitive types (String, Number, Boolean), null values, and lists
+ * of these primitive types.
+ *
+ * Usecase: When getting data from a REDIS source as a map, this will create a JSON for a REST service
+ *
+ * @receiver The map to be converted to a JsonObject.
+ * @return A [JsonObject] representation of the input map.
+ * @throws IllegalArgumentException if an unsupported value type is encountered within the map
+ *                                  or its lists.
+ */
 fun Map<String, Any?>.toJson(): JsonObject = buildJsonObject {
   for ((key, value) in this@toJson) {
     put(

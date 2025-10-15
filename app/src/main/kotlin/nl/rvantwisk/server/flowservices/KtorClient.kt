@@ -17,6 +17,9 @@ import org.koin.core.component.KoinComponent
 
 object KtorClient : KoinComponent {
 
+  /**
+   * Simple client to be used to fetch JSON data from webservices
+   */
   fun getHttpClient(timeout: Long = 1500): HttpClient = HttpClient {
     install(HttpTimeout) {
       requestTimeoutMillis = timeout
@@ -50,13 +53,9 @@ object KtorClient : KoinComponent {
     }
   }
 
-  fun Configuration.xmlGzip(
-    format: XML = DefaultXml,
-    contentType: ContentType = ContentType(TYPE, "x-gzip")
-  ) {
-    serialization(contentType, format)
-  }
-
+  /**
+   * Simple client to be used to fetch XML data from webservices
+   */
   fun getHttpXmlClient(timeout: Long = 1500): HttpClient = HttpClient {
     install(HttpTimeout) {
       requestTimeoutMillis = timeout

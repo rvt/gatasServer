@@ -5,8 +5,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import nl.rvantwisk.gatas.models.AircraftPosition
-import nl.rvantwisk.gatas.models.RestResult
-import nl.rvantwisk.gatas.models.RestStatus
+import nl.rvantwisk.gatas.models.FlowResult
+import nl.rvantwisk.gatas.models.FlowStatus
 import nl.rvantwisk.gatas.webservice.AircraftWebService
 import org.koin.core.component.KoinComponent
 
@@ -17,7 +17,7 @@ class AdsbGenericFlowService(
     val aircraftWebService: AircraftWebService,
     val locationService: LocationService
 ) : AircraftFlowService, KoinComponent {
-    override fun streamAircraft(): Flow<RestResult<List<AircraftPosition>>> {
+    override fun streamAircraft(): Flow<FlowResult<List<AircraftPosition>>> {
         return flow {
             while (true) {
                 try {
@@ -31,10 +31,10 @@ class AdsbGenericFlowService(
                             if (pos.first().radius == 0.0) 200000.0 else pos.first().radius
                         )
                         emit(
-                            RestResult(
+                            FlowResult(
                                 source = aircraftWebService.getName(),
                                 data = positions,
-                                status = RestStatus.SUCCESS
+                                status = FlowStatus.SUCCESS
                             )
                         )
                     }

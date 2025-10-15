@@ -1,6 +1,6 @@
 ### gatasLib
 
-A library to support gatasServer it contains the generic interfaces and pakcgaes used to communicate
+A library to support gatasServer it contains the generic interfaces and packages used to communicate
 between various services.
 
 ## Warning

@@ -48,7 +48,7 @@ class UdpAircraftService : KoinComponent {
   fun start() {
     log.i { "UdpAircraftService started" }
     scope.launch {
-      runUdpServer(port = 16256, scope = scope)
+      runUdpServer(port = 3000, scope = scope)
     }
   }
 
@@ -60,7 +60,7 @@ class UdpAircraftService : KoinComponent {
     val selectorManager = SelectorManager(Dispatchers.IO)
 
     val socket = aSocket(selectorManager).udp().bind(InetSocketAddress("0.0.0.0", port))
-    println("\uD83D\uDD0C UDP server listening on port $port")
+    log.i { "UDP server listening on port $port" }
 
     while (true) {
       val datagram = socket.receive()
@@ -70,13 +70,13 @@ class UdpAircraftService : KoinComponent {
       // Run packet handler in outer scope to keep listener non-blocking
       scope.launch {
         try {
-//          log.i { "Received ${received.size} bytes from $sender" }
+          log.i { "Received ${received.size} bytes from $sender" }
           val reply = udpRequestHandler(received, sender)
           if (reply != null && reply.isNotEmpty()) {
             socket.send(Datagram(buildPacket { writeFully(reply) }, sender))
           }
         } catch (e: Exception) {
-          println("Error processing UDP packet: ${e.message}")
+          log.e(e) { "Error ${e.message}"}
         }
       }
     }
@@ -103,7 +103,7 @@ class UdpAircraftService : KoinComponent {
 
       if (cobsByteArray.peekAhead() == AIRCRAFT_POSITION_REQUEST_V1) {
         runCatching {
-          val metarCache = metarService.getCache()
+          val metarCache = metarService.cacheFactory()
           val ownship = deserializeOwnshipPositionV1(cobsByteArray)
           lat = ownship.latitude
           lon = ownship.longitude
@@ -115,7 +115,7 @@ class UdpAircraftService : KoinComponent {
             ownship.longitude,
             ownship.ellipsoidHeight
           ).map {
-            it.updateEstimGeomAltitude(metarCache.getMetar(it.latitude, it.longitude))
+            it.updateEstimGeomAltitude(metarCache.getQNH(it.latitude, it.longitude))
             it
           }
 

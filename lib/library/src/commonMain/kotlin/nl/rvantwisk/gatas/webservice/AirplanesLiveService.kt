@@ -40,9 +40,8 @@ class AirplanesLiveService : AircraftWebService, KoinComponent {
     radiusM: Double
   ): List<AircraftPosition> {
     val radiusNm = radiusM.meterToNauticalMiles().toInt()
-    log.i { "Fetching aircraft from ${getName()} for radius: ${radiusNm}Nm my position: ${latitude} ${longitude}" }
+    log.i { "Fetching aircraft from ${getName()} for radius: ${radiusNm}Nm my position: ${latitude} ${longitude} key ${airplanesLiveKey}" }
     try {
-//      val req = "https://api.airplanes.live/v2/point/${latitude}/${longitude}/$radiusNm"
       val req = "https://rest.api.airplanes.live/?circle=${latitude},${longitude},$radiusNm"
       val response =
         adsbHttpClient.get(req) {
@@ -55,7 +54,7 @@ class AirplanesLiveService : AircraftWebService, KoinComponent {
 
       return response.ac.map { dto ->
         // hex codes prefixed with a ~ are received byTSIS-B traffic, usually mode-c transponder, we remove the ~
-        // assuming the hexcode will always be teh same random number for the same aircraft
+        // assuming the hexcode will always be the same random number for the same aircraft
         val hex = dto.hex.filter { it in '0'..'9' || it in 'a'..'z' || it in 'A'..'Z' }
 //        runCatching {
 //          dto.hex.filter {it in '0'..'9' || 'a' .. 'z' || 'A'..'Z'}

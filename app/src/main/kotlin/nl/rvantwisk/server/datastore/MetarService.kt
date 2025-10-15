@@ -11,13 +11,10 @@ import org.koin.core.parameter.parametersOf
 import org.koin.core.qualifier.named
 
 interface MetarCache {
-  suspend fun getMetar(lat: Double, lon: Double): Double
+  suspend fun getQNH(lat: Double, lon: Double): Double
 }
 
 class MetarService : KoinComponent {
-
-  private val log: Logger by inject { parametersOf(SpatialService::class.simpleName!!) }
-
   private val tile38: SpatialService by inject(named("SpatialService"))
   private val h3: H3Core by inject()
 
@@ -29,41 +26,38 @@ class MetarService : KoinComponent {
   class LocalCache(val tile38: SpatialService, val h3: H3Core) : MetarCache {
     val metarCache: MutableMap<Long, MetarH3> = mutableMapOf()
 
-    override suspend fun getMetar(lat: Double, lon: Double): Double {
+
+    // somewhere we need to fix the error in the log :  position: 1:229427: Field 'elevation_m' is required for type with serial na
+
+    override suspend fun getQNH(lat: Double, lon: Double): Double {
       val h3Id = h3.latLngToCell(lat, lon, H3_RESOLUTION)
 
-      // Check local cache
-      if (metarCache.containsKey(h3Id)) {
-        return metarCache[h3Id]!!.qnh
-      }
+      // Check local in-memory cache
+      metarCache[h3Id]?.qnh?.let { return it }
 
-      // Check h3 cache in Tile38
-      // Optionally we could use REDS to lookup this item
+      // Check persistent H3 cache
       val metarH3 = tile38.getFieldAs<MetarH3>("metarh3", h3Id, "json")
-
-      // Locale closest metar
-      if (metarH3 == null) {
-        val nearbyMetar = tile38.getNearbyMetar(lat, lon)
-        if (nearbyMetar.isNotEmpty()) {
-          // Optionally we could store the h3 entry in REDIS
-          tile38.addMetarById(nearbyMetar.first(), "metarh3", h3Id)
-
-// Used for debugging only
-//          val h3Address = h3.latLngToCellAddress(lat, lon, H3_RESOLUTION)
-//          tile38.addMetarById(nearbyMetar.first(), "metarh3addr", h3Address)
-        }
-        // Return standard if there was no local metar
-        return STD_QNH;
+      if (metarH3 != null) {
+        return metarH3.qnh
       }
 
-      return metarH3.qnh
+      // Find nearest live METAR
+      val nearby = tile38.getNearbyMetar(lat, lon).firstOrNull()
+      return if (nearby != null) {
+        tile38.addMetarById(nearby, "metarh3", h3Id)
+        nearby.qnh
+      } else {
+        STD_QNH  // Fallback to standard if nothing found
+      }
     }
   }
 
   /**
    * Call this function each time you need to handle a request
+   * The returned cache will help to reduce the number of requests because
+   * most aircraft will be found in the same sector and thus avoiding over the wire requests to a service
    */
-  fun getCache(): LocalCache {
+  fun cacheFactory(): LocalCache {
     return LocalCache(tile38, h3);
   }
 

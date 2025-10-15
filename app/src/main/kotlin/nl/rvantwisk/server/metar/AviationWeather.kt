@@ -23,6 +23,7 @@ import org.koin.core.component.inject
 import org.koin.core.parameter.parametersOf
 import org.koin.core.qualifier.named
 import java.util.zip.GZIPInputStream
+import kotlin.time.measureTimedValue
 
 class MetarUpdateService : KoinComponent {
   private val log: Logger by inject { parametersOf(MetarUpdateService::class.simpleName!!) }
@@ -35,23 +36,18 @@ class MetarUpdateService : KoinComponent {
     @OptIn(ExperimentalXmlUtilApi::class)
     val xml = XML {
       defaultPolicy {
-        // Ignore any fields or atributes in the XML we do not have in our DTO's
+        // Ignore any fields or attributes in the XML we do not have in our DTO's
         unknownChildHandler = UnknownChildHandler { _, _, _, _, _ -> emptyList() }
       }
     }
-
   }
-
 
   @OptIn(ExperimentalLettuceCoroutinesApi::class)
   fun start() {
     scope.launch {
-
       var lastFetch: Long = 0 // epoch millis of last METAR fetch
 
       while (isActive) {
-
-
         if (tile38.scanFleet(1).isNotEmpty()) {
           val now = java.time.ZonedDateTime.now(java.time.ZoneOffset.UTC)
           val epochMillis = System.currentTimeMillis()
@@ -67,18 +63,20 @@ class MetarUpdateService : KoinComponent {
           }
 
           if (shouldFetch) {
-            log.i { "Start: Fetching METARs" }
-            fetchMetars()
-              .asSequence()
-              .filter {
-                it.latitude?.equalsWithTolerance(-99.9) == false &&
-                  it.longitude?.equalsWithTolerance(-99.9) == false &&
-                  (it.altim_in_hg != null || it.sea_level_pressure_mb != null)
-              }
-              .forEach { metar ->
-                tile38.addMetar(metar)
-              }
-            log.i { "Done: Fetching METARs" }
+            val result = measureTimedValue {
+              fetchMetars()
+                .asSequence()
+                .filter {
+                  it.latitude?.equalsWithTolerance(-99.9) == false &&
+                    it.longitude?.equalsWithTolerance(-99.9) == false &&
+                    (it.altim_in_hg != null || it.sea_level_pressure_mb != null)
+                }
+                .forEach { metar ->
+                  tile38.addMetar(metar)
+                }
+            }
+
+            log.i { "Fetched metars, took ${result.duration} " }
             lastFetch = epochMillis
           }
         }
@@ -90,6 +88,17 @@ class MetarUpdateService : KoinComponent {
     }
   }
 
+  /**
+   * Fetches METAR data from the AviationWeather service.
+   *
+   * This function makes an HTTP GET request to retrieve gzipped XML METAR data,
+   * then parses the XML into a list of [Metar] objects.
+   *
+   * @return A list of [Metar] objects representing the fetched weather reports.
+   * @throws [ClientRequestException] if the HTTP request fails.
+   * @throws [SerializationException] if the XML parsing fails.
+   * @throws [IOException] if there's an issue with reading or decompressing the data.
+   */
   @OptIn(ExperimentalXmlUtilApi::class)
   suspend fun fetchMetars(): List<Metar> {
     val req = "https://aviationweather.gov/data/cache/metars.cache.xml.gz"

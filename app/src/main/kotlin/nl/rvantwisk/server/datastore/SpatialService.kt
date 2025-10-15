@@ -108,7 +108,7 @@ class SpatialService : KoinComponent {
 
   @OptIn(ExperimentalLettuceCoroutinesApi::class, ExperimentalStdlibApi::class)
   fun sendAircrafts(aircraftList: List<AircraftPosition>) {
-    log.i { "Pushing to Tile" }
+    log.i { "Pushing to Tile ${aircraftList.size} aircraft" }
     val coroutines = redisClientWrite.coroutines()
 
     aircraftList.map { aircraft ->

@@ -54,7 +54,7 @@ class AdsbLolService : AircraftWebService, KoinComponent {
 
             return response.ac.map { dto ->
                     // hex codes prefixed with a ~ are received byTSIS-B traffic, usually mode-c transponder, we remove the ~
-                    // assuming the hexcode will always be teh same random number for the same aircraft
+                    // assuming the hexcode will always be the same random number for the same aircraft
                     val hex = dto.hex.filter { it in '0'..'9' || it in 'a'..'z' || it in 'A'..'Z' }
 
                     AircraftPosition(
