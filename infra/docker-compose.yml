@@ -1,44 +1,39 @@
 services:
-  tile38:
-    image: tile38/tile38
-    container_name: tile38
-    ports:
-        - 9851:9851
-    restart: unless-stopped
-
   app:
     build:
-#      context: ..
       dockerfile: Dockerfile.prebuilt
     container_name: app
-    depends_on:
-      - tile38
     environment:
       TILE38_HOST: tile38
       TILE38_PORT: 9851
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
       AIRPLANESLIVEKEY: ${AIRPLANESLIVEKEY}
     ports:
       - "8080:8080/tcp"
       - "3000:3000/udp"
     restart: unless-stopped
+    networks:
+      - gatas-net
 
-  redis:
-    container_name: redis
-    image: redis:8.2-alpine
-    restart: always
-    ports:
-      - '6379:6379'
-    environment:
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
-    command: >
-      sh -c "exec redis-server
-      --save 20 1
-      --loglevel warning
-      --requirepass $$REDIS_PASSWORD"
-    volumes:
-      - cache:/data
+networks:
+  gatas-net:
+    external: true
+
+
+#  redis:
+#    container_name: redis
+#    image: redis:8.2-alpine
+#    restart: always
+#    ports:
+#      - '6379:6379'
+#    environment:
+#      REDIS_PASSWORD: ${REDIS_PASSWORD}
+#    command: >
+#      sh -c "exec redis-server
+#      --save 20 1
+#      --loglevel warning
+#      --requirepass $$REDIS_PASSWORD"
+#    volumes:
+#      - cache:/data
 
 #  grafana:
 #    image: grafana/grafana

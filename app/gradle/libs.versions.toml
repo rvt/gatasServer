@@ -15,7 +15,7 @@ okio-version = "3.16.0"
 gatas-library = "1.0.0"
 uber-h3 = "4.1.1"
 pdvrieze-serialization = "0.91.2"
-
+testcontainers-version = "1.19.0"
 geok-version = "1.2.2"
 
 [libraries]
@@ -61,6 +61,8 @@ pdvrieze-serialization = { module = "io.github.pdvrieze.xmlutil:serialization", 
 
 # Test
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin-version" }
+testcontainers-testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers-version" }
+testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter",  version.ref = "testcontainers-version" }
 
 # gRPC
 grpc-protobuf = { group = "io.grpc", name = "grpc-protobuf", version = "1.62.2" }
@@ -79,6 +81,7 @@ okio = { group = "com.squareup.okio", name = "okio", version.ref = "okio-version
 okio-jvm = { group = "com.squareup.okio", name = "okio-jvm", version.ref = "okio-version" }
 
 uber-h3 = { group = "com.uber", name = "h3", version.ref = "uber-h3" }
+
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin-version" }

@@ -29,9 +29,14 @@ tasks.named<ProcessResources>("processResources") {
     dependsOn("copyFrontend")
 }
 
+tasks.test {
+    useJUnitPlatform()
+
+}
+
 dependencies {
     implementation(libs.geok)
-    implementation(libs.gatas.library)
+//    implementation(libs.gatas.library)
     implementation(libs.ktor.server.core)
     implementation(libs.koin.ktor)
     implementation(libs.koin.logger.slf4j)
@@ -59,57 +64,22 @@ dependencies {
     implementation(libs.ktor.server.config.yaml)
     implementation(libs.ktor.compression)
 
-    implementation(libs.protobuf.kotlin)  // com.google.protobuf:protobuf-kotlin
-    implementation(libs.grpc.kotlin.stub) // io.grpc:grpc-kotlin-stub
-    implementation(libs.grpc.protobuf)    // io.grpc:grpc-protobuf
-    implementation(libs.grpc.stub)        // io.grpc:grpc-stub
-//    implementation(libs.protobuf.java.util) // com.google.protobuf:protobuf-java-util
-    implementation(libs.protobuf.java)    // com.google.protobuf:protobuf-java
-
-    runtimeOnly(libs.grpc.netty.shaded)   // io.grp:grpc-netty-shaded
-
     testImplementation(libs.ktor.server.test.host)
     testImplementation(libs.kotlin.test.junit)
+
+    testImplementation(libs.testcontainers.junit.jupiter)
+    testImplementation(libs.testcontainers.testcontainers) // Check for latest version
+    testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.0")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
+    testImplementation("io.insert-koin:koin-test:3.5.3")
+    // Specifically for JUnit 5 support (provides @JvmField and extension support)
+    testImplementation("io.insert-koin:koin-test-junit5:3.5.3")
+
 
     implementation(libs.okio)
     implementation(libs.okio.jvm)
 
     implementation(libs.uber.h3)
-}
-
-sourceSets {
-    val grpc = create("grpckt") {
-    }
-    getByName("test") {
-        compileClasspath += grpc.output
-        runtimeClasspath += grpc.output
-    }
-}
-
-protobuf {
-    protoc {
-        artifact = "com.google.protobuf:protoc:3.25.8"
-    }
-    plugins {
-        create("grpc") {
-            // THis needs Rosetta on ARM to work
-            artifact = "io.grpc:protoc-gen-grpc-java:1.73.0"
-        }
-        create("grpckt") {
-            artifact = "io.grpc:protoc-gen-grpc-kotlin:1.4.3:jdk8@jar"
-        }
-    }
-
-
-    generateProtoTasks {
-        all().forEach {
-            it.plugins {
-                create("grpc")
-                create("grpckt")
-            }
-            it.builtins {
-                create("kotlin")
-            }
-        }
-    }
 }
