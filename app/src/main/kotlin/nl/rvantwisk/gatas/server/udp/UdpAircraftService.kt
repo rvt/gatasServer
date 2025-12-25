@@ -1,35 +1,17 @@
 package nl.rvantwisk.gatas.server.udp
 
 import co.touchlab.kermit.Logger
-import io.ktor.network.selector.ActorSelectorManager
-import io.ktor.network.sockets.Datagram
-import io.ktor.network.sockets.InetSocketAddress
-import io.ktor.network.sockets.SocketAddress
-import io.ktor.network.sockets.aSocket
-import io.ktor.utils.io.core.buildPacket
-import io.ktor.utils.io.core.writeFully
+import io.ktor.network.selector.*
+import io.ktor.network.sockets.*
+import io.ktor.utils.io.core.*
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.*
 import kotlinx.io.readByteArray
 import kotlinx.serialization.ExperimentalSerializationApi
-import nl.rvantwisk.gatas.lib.extensions.AIRCRAFT_CONFIGURATIONS_V1
-import nl.rvantwisk.gatas.lib.extensions.AIRCRAFT_POSITION_REQUEST_V1
-import nl.rvantwisk.gatas.lib.extensions.CobsByteArray
-import nl.rvantwisk.gatas.lib.extensions.deserializeAircraftConfigurationV1
-import nl.rvantwisk.gatas.lib.extensions.deserializeOwnshipPositionV1
-import nl.rvantwisk.gatas.lib.extensions.filterByDistanceOnGround
-import nl.rvantwisk.gatas.lib.extensions.serializeSetIcaoAddressV1
+import nl.rvantwisk.gatas.lib.extensions.*
 import nl.rvantwisk.gatas.lib.math.distanceFast
 import nl.rvantwisk.gatas.lib.models.SetIcaoAddressV1
-import nl.rvantwisk.gatas.lib.models.updateEstimGeomAltitude
+import nl.rvantwisk.gatas.lib.services.AltitudeService
 import nl.rvantwisk.gatas.server.REQUEST_GROUND_DIST
 import nl.rvantwisk.gatas.server.REQUEST_MAX_AIRCRAFT
 import nl.rvantwisk.gatas.server.REQUEST_MAX_DIST
@@ -49,6 +31,7 @@ class UdpAircraftService : KoinComponent {
     private val log: Logger by inject { parametersOf(UdpAircraftService::class.simpleName!!) }
 
     private val tile38: SpatialService by inject(named("SpatialService"))
+    private val altitudeService: AltitudeService by inject()
     private val metarCacheFactoryService: MetarCacheFactoryService by inject(named("MetarService"))
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
@@ -169,7 +152,7 @@ class UdpAircraftService : KoinComponent {
                     val aircrafts = tile38.getAircraft(
                         ownship.latitude, ownship.longitude, ownship.ellipsoidHeight
                     ).map {
-                        it.updateEstimGeomAltitude(metarCache.getQNH(it.latitude, it.longitude))
+                        altitudeService.updateEstimGeomAltitude(it, metarCache.getQNH(it.latitude, it.longitude))
                         it
                     }.filterByDistanceOnGround(
                             ownship.latitude, ownship.longitude, REQUEST_GROUND_DIST, REQUEST_MAX_DIST

@@ -1,17 +1,14 @@
 package nl.rvantwisk.gatas.server.metar
 
 import co.touchlab.kermit.Logger
-import io.ktor.client.HttpClient
-import io.ktor.client.request.get
-import io.ktor.client.statement.readRawBytes
+import io.ktor.client.*
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.*
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import nl.adaptivity.xmlutil.ExperimentalXmlUtilApi
 import nl.adaptivity.xmlutil.serialization.UnknownChildHandler
 import nl.adaptivity.xmlutil.serialization.XML
@@ -24,10 +21,8 @@ import org.koin.core.component.inject
 import org.koin.core.parameter.parametersOf
 import org.koin.core.qualifier.named
 import java.util.zip.GZIPInputStream
-import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.ExperimentalTime
-import kotlin.time.Instant
 import kotlin.time.measureTimedValue
 
 /**
@@ -71,19 +66,19 @@ class MetarUpdateService : KoinComponent {
 
     @OptIn(ExperimentalLettuceCoroutinesApi::class, ExperimentalTime::class)
     fun start() {
-        var lastFetchInstant: Instant = Clock.System.now() - 60.minutes;
+        var lastFetchInstant = Clock.System.now() - 60.minutes;
         scope.launch {
             while (isActive) {
-                delay(5_000)
                 try {
-                    // When there is is no fleet flying, skip
+                    // When there is no fleet flying, skip
                     if (tile38.scanFleet(1).isEmpty()) {
                         continue
                     }
 
                     // Fetch at least every 15 minutes or every 10/25/40 and 55 minute where we expect metar is updated
-                    val minute = java.time.ZonedDateTime.now(java.time.ZoneOffset.UTC).minute
-                    val minutesSinceLastFetch = (Clock.System.now() - lastFetchInstant).inWholeMinutes
+                    val now = Clock.System.now()
+                    val minute = now.toLocalDateTime(TimeZone.UTC).minute
+                    val minutesSinceLastFetch = (now - lastFetchInstant).inWholeMinutes
                     if (!(minutesSinceLastFetch >= 15 || minute in setOf(10, 25, 40, 55))) {
                         continue
                     }
@@ -92,8 +87,8 @@ class MetarUpdateService : KoinComponent {
                         val (processedMetars, duration) = measureTimedValue {
                             val metars = fetchMetars()
                                 .filter {
-                                    it.latitude?.fuzzyEquals(-99.9) == false &&
-                                        it.longitude?.fuzzyEquals(-99.9) == false &&
+                                    !it.latitude.fuzzyEquals(-99.9) &&
+                                        !it.longitude.fuzzyEquals(-99.9) &&
                                         (it.altim_in_hg != null || it.sea_level_pressure_mb != null)
                                 }
                             metars.forEach { metar ->
@@ -107,9 +102,9 @@ class MetarUpdateService : KoinComponent {
                     }
                 } catch (e: Exception) {
                     log.e(e) { e.message ?: "" }
-                    // IJust add 10 seconds just in case we where rate limited
-                    delay(10_000)
+                    // Just add 10 seconds just in case we where rate limited
                 }
+                delay(15_000)
             }
         }
     }
@@ -129,7 +124,9 @@ class MetarUpdateService : KoinComponent {
     suspend fun fetchMetars(): List<Metar> {
         val req = "https://aviationweather.gov/data/cache/metars.cache.xml.gz"
         val bytes = httpClient.get(req)
-        val xmlBytes = GZIPInputStream(bytes.readRawBytes().inputStream()).readBytes()
+        val xmlBytes = withContext(Dispatchers.IO) {
+            GZIPInputStream(bytes.readRawBytes().inputStream()).readBytes()
+        }
         return xml.decodeFromString(Response.serializer(), xmlBytes.decodeToString()).data.METAR
     }
 }

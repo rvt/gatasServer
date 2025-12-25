@@ -1,7 +1,6 @@
 package nl.rvantwisk.gatas.lib.extensions
 
 import nl.rvantwisk.gatas.lib.math.CRC16
-import nl.rvantwisk.gatas.lib.models.AircraftCategory
 
 /**
  * Converts meters to nautical miles.
@@ -9,15 +8,20 @@ import nl.rvantwisk.gatas.lib.models.AircraftCategory
  * @return The distance in nautical miles.
  */
 fun Int.meterToNauticalMiles(): Double {
-    return this / 1852.0
-}
-fun Double.meterToNauticalMiles(): Double {
-    return this / 1852.0
-}
-fun Int.footToMeter(): Double {
-    return this * FT_TO_METERS
+    return (this / NM_TO_METERS) / 1000.0
 }
 
+fun Double.meterToNauticalMiles(): Double {
+    return (this / NM_TO_METERS) / 1000.0
+}
+
+//fun Int.footToMeter(): Double {
+//    return this * FT_TO_METERS
+//}
+
+fun Int.footToMeter(): Int {
+    return (this * FT_TO_METERS).toInt()
+}
 fun Double.footToMeter(): Double {
     return this * FT_TO_METERS
 }
@@ -44,30 +48,3 @@ fun List<ByteArray>.combineBuffers( extraBytes: Int): ByteArray {
 
 @OptIn(ExperimentalStdlibApi::class)
 fun String.hexToUint():UInt = this.hexToLong().toUInt()
-
-fun AircraftCategory.toFlarm(): Char = when (this) {
-    AircraftCategory.GLIDER -> '1'
-    // Assume a TOW_PLANE is not defined, so skip '2'
-    AircraftCategory.ROTORCRAFT,
-    AircraftCategory.GYROCOPTER -> '3'
-    AircraftCategory.SKY_DIVER -> '4'
-    AircraftCategory.DROP_PLANE -> '5'
-    AircraftCategory.HANG_GLIDER -> '6'
-    AircraftCategory.PARA_GLIDER -> '7'
-    AircraftCategory.LIGHT,
-    AircraftCategory.SMALL,
-    AircraftCategory.ULTRA_LIGHT_FIXED_WING,
-    AircraftCategory.AEROBATIC -> '8'
-    AircraftCategory.LARGE,
-    AircraftCategory.HIGH_VORTEX,
-    AircraftCategory.HEAVY_ICAO -> '9'
-    AircraftCategory.UNKNOWN -> 'A'
-    AircraftCategory.LIGHT_THAN_AIR -> 'B'
-    AircraftCategory.UN_MANNED -> 'D'
-    AircraftCategory.POINT_OBSTACLE,
-    AircraftCategory.LINE_OBSTACLE,
-    AircraftCategory.CLUSTER_OBSTACLE -> 'F'
-    AircraftCategory.SURFACE_VEHICLE,
-    AircraftCategory.SURFACE_EMERGENCY_VEHICLE -> 'F'
-    else -> 'A'
-}

@@ -1,14 +1,12 @@
 package nl.rvantwisk.gatas.server.datastore
 
 import com.uber.h3core.H3Core
+import nl.rvantwisk.gatas.lib.extensions.STD_QNH
 import nl.rvantwisk.gatas.server.H3_AIRCRAFT_CELL_SIZE
-import nl.rvantwisk.gatas.server.METAR_BY_H3_KEY
-import nl.rvantwisk.gatas.server.STD_QNH
 import nl.rvantwisk.gatas.server.datastore.tile38.models.MetarH3
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.koin.core.qualifier.named
-import kotlin.collections.firstOrNull
 
 interface MetarCache {
   suspend fun getQNH(lat: Double, lon: Double): Double

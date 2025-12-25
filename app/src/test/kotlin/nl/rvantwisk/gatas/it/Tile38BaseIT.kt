@@ -1,4 +1,4 @@
-package nl.rvantwisk.gatas
+package nl.rvantwisk.gatas.it
 
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll

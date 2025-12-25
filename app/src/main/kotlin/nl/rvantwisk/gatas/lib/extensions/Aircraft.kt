@@ -2,16 +2,6 @@ package nl.rvantwisk.gatas.lib.extensions
 
 import nl.rvantwisk.gatas.lib.math.distanceFast
 import nl.rvantwisk.gatas.lib.models.AircraftPosition
-import kotlin.math.abs
-
-fun List<AircraftPosition>.filterByAltitudeRange(
-  altDiffMeters: Int,
-  ownshipEllipsoidHeight: Int
-): List<AircraftPosition> {
-
-  return this
-    .filter { abs(it.ellipsoidHeight - ownshipEllipsoidHeight) <= altDiffMeters }
-}
 
 /**
  * Filter out aircraft that are on the ground and we are further away than 5Km.
@@ -32,7 +22,7 @@ fun List<AircraftPosition>.filterByDistanceOnGround(
       position.longitude
     )
 
-    if (position._baroAltitude == "ground") {
+    if (position.isGround) {
       // On the ground: keep only if close enough
       rel < groundDistanceMeters
     } else {

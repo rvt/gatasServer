@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class OwnshipPosition (
-    val epoch : UInt,
+    val epoch : Int,
     val id: Int,
     val latitude: Double,
     val longitude: Double,

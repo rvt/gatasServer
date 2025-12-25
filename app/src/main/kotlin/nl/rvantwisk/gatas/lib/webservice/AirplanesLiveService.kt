@@ -1,26 +1,17 @@
 package nl.rvantwisk.gatas.lib.webservice
 
 import co.touchlab.kermit.Logger
-import io.ktor.client.HttpClient
-import io.ktor.client.call.body
-import io.ktor.client.request.accept
-import io.ktor.client.request.get
-import io.ktor.client.request.headers
-import io.ktor.http.ContentType
-import nl.rvantwisk.gatas.lib.extensions.FTPMIN_TO_MS
-import nl.rvantwisk.gatas.lib.extensions.KN_TO_MS
-import nl.rvantwisk.gatas.lib.extensions.MAX_CALLSIGN_LENGTH
-import nl.rvantwisk.gatas.lib.extensions.RAD_TO_DEGREES
-import nl.rvantwisk.gatas.lib.extensions.adsbToGatasCategory
-import nl.rvantwisk.gatas.lib.extensions.footToMeter
-import nl.rvantwisk.gatas.lib.extensions.hexToUint
-import nl.rvantwisk.gatas.lib.extensions.meterToNauticalMiles
+import io.ktor.client.*
+import io.ktor.client.call.*
+import io.ktor.client.request.*
+import io.ktor.http.*
+import nl.rvantwisk.gatas.lib.extensions.*
 import nl.rvantwisk.gatas.lib.models.AddressType
 import nl.rvantwisk.gatas.lib.models.AircraftCategory
 import nl.rvantwisk.gatas.lib.models.AircraftPosition
 import nl.rvantwisk.gatas.lib.models.DataSource
-import nl.rvantwisk.gatas.lib.webservice.models.AirplanesLiveAircraftDto
 import nl.rvantwisk.gatas.lib.webservice.models.AirplanesLiveRestResponseDto
+import nl.rvantwisk.gatas.lib.webservice.models.composedCallSignType
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.koin.core.parameter.parametersOf
@@ -56,18 +47,12 @@ class AirplanesLiveService : AircraftWebService, KoinComponent {
                 // hex codes prefixed with a ~ are received byTSIS-B traffic, usually mode-c transponder, we remove the ~
                 // assuming the hexcode will always be the same random number for the same aircraft
                 val hex = dto.hex.filter { it in '0'..'9' || it in 'a'..'z' || it in 'A'..'Z' }
-//        runCatching {
-//          dto.hex.filter {it in '0'..'9' || 'a' .. 'z' || 'A'..'Z'}
-//        }.onFailure {
-//          log.i{"Failed to parse ${dto.hex.filter { it.isLetterOrDigit() }.hexToInt()}"}
-//        }
+
                 AircraftPosition(
                     dataSource = DataSource.ADSB,
                     addressType = AddressType.ICAO, // even for TIS-B we do use ICAO
                     latitude = dto.lat ?: 0.0,
                     longitude = dto.lon ?: 0.0,
-                    _ellipsoidHeight = dto.altGeom?.let { (it.footToMeter()).toInt() },
-                    _baroAltitude = dto.altBaro,
                     course = dto.track ?: dto.trueHeading ?: dto.magHeading ?: dto.navHeading ?: 0.0,
                     hTurnRate = (dto.trackRate ?: 0.0) * RAD_TO_DEGREES,
                     groundSpeed = (dto.gs ?: 0.0) * KN_TO_MS,
@@ -76,8 +61,10 @@ class AirplanesLiveService : AircraftWebService, KoinComponent {
                     callSign = dto.composedCallSignType(),
                     id = hex.hexToUint(),
                     qnh = dto.navQnh,
-                    ellipsoidHeight = 0,
                     nicBaro = dto.nicBaro ?: 0,
+                    baroAltitude = if (dto.altBaro == "ground") { null } else { dto.altBaro?.toIntOrNull()?.footToMeter() },
+                    ellipsoidHeight = dto.altGeom?.let { (it.footToMeter()) },
+                    isGround = dto.altBaro == "ground"
                 )
             }
         } catch (e: Exception) {
@@ -87,17 +74,6 @@ class AirplanesLiveService : AircraftWebService, KoinComponent {
     }
 
     override fun getName() = "airplanes.live"
+    override fun getMaxRadius(): Double = 250000 * NM_TO_METERS
 }
 
-/**
- * Create a callsign consiting of the callsign and aircraft type
- * returns for example: PH-ABC!C152
- * Maximum length will be 12 BYTES
- */
-fun AirplanesLiveAircraftDto.composedCallSignType(): String {
-    return if (this.t?.isNotEmpty() == true) {
-        "${r?.trim()}!${t.trim()}"
-    } else {
-        r?.trim() ?: "-"
-    }.take(MAX_CALLSIGN_LENGTH)
-}

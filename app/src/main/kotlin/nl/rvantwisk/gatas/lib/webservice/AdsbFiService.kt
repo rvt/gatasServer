@@ -1,25 +1,17 @@
 package nl.rvantwisk.gatas.lib.webservice
 
 import co.touchlab.kermit.Logger
-import io.ktor.client.HttpClient
-import io.ktor.client.call.body
-import io.ktor.client.request.accept
-import io.ktor.client.request.get
-import io.ktor.http.ContentType
-import nl.rvantwisk.gatas.lib.extensions.FTPMIN_TO_MS
-import nl.rvantwisk.gatas.lib.extensions.KN_TO_MS
-import nl.rvantwisk.gatas.lib.extensions.MAX_CALLSIGN_LENGTH
-import nl.rvantwisk.gatas.lib.extensions.RAD_TO_DEGREES
-import nl.rvantwisk.gatas.lib.extensions.adsbToGatasCategory
-import nl.rvantwisk.gatas.lib.extensions.footToMeter
-import nl.rvantwisk.gatas.lib.extensions.hexToUint
-import nl.rvantwisk.gatas.lib.extensions.meterToNauticalMiles
+import io.ktor.client.*
+import io.ktor.client.call.*
+import io.ktor.client.request.*
+import io.ktor.http.*
+import nl.rvantwisk.gatas.lib.extensions.*
 import nl.rvantwisk.gatas.lib.models.AddressType
 import nl.rvantwisk.gatas.lib.models.AircraftCategory
 import nl.rvantwisk.gatas.lib.models.AircraftPosition
 import nl.rvantwisk.gatas.lib.models.DataSource
-import nl.rvantwisk.gatas.lib.webservice.models.AdsbFiAircraftDto
 import nl.rvantwisk.gatas.lib.webservice.models.AdsbFiResponseDto
+import nl.rvantwisk.gatas.lib.webservice.models.composedCallSignType
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.koin.core.parameter.parametersOf
@@ -65,8 +57,6 @@ class AdsbFiService : AircraftWebService, KoinComponent {
                         addressType = AddressType.ICAO,
                         latitude = dto.lat ?: 0.0,
                         longitude = dto.lon ?: 0.0,
-                        _ellipsoidHeight = dto.altGeom?.let { (it.footToMeter()).toInt() },
-                        _baroAltitude = dto.altBaro,
                         course = dto.track ?: dto.trueHeading ?: dto.magHeading ?: dto.navHeading ?: 0.0,
                         hTurnRate = (dto.trackRate ?: 0.0) * RAD_TO_DEGREES,
                         groundSpeed = (dto.gs ?: 0.0) * KN_TO_MS,
@@ -74,9 +64,11 @@ class AdsbFiService : AircraftWebService, KoinComponent {
                         aircraftCategory = dto.category?.adsbToGatasCategory() ?: AircraftCategory.UNKNOWN,
                         id = hex.hexToUint(),
                         callSign = dto.composedCallSignType(),
-                        ellipsoidHeight = 0,
                         qnh = dto.navQnh,
                         nicBaro = dto.nicBaro ?: 0,
+                        baroAltitude = if (dto.altBaro == "ground") { null } else { dto.altBaro?.toIntOrNull()?.footToMeter() },
+                        ellipsoidHeight = dto.altGeom?.let { (it.footToMeter()) },
+                        isGround = dto.altBaro == "ground"
                     )
                 }
 
@@ -87,12 +79,6 @@ class AdsbFiService : AircraftWebService, KoinComponent {
     }
 
     override fun getName() = "adsb.fi"
+    override fun getMaxRadius(): Double = 100000 * NM_TO_METERS
 }
 
-fun AdsbFiAircraftDto.composedCallSignType(): String {
-    return if (this.t?.isNotEmpty() == true) {
-        "${r?.trim()}!${t.trim()}"
-    } else {
-        r?.trim() ?: "-"
-    }.take(MAX_CALLSIGN_LENGTH)
-}

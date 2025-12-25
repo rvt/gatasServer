@@ -2,15 +2,11 @@ package nl.rvantwisk.gatas.server.feeds
 
 import co.touchlab.kermit.Logger
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.launch
-import nl.rvantwisk.gatas.lib.flows.AircraftFlowService
 import nl.rvantwisk.gatas.lib.models.FlowStatus
 import nl.rvantwisk.gatas.server.datastore.SpatialService
+import nl.rvantwisk.gatas.server.flowservices.ClusterDispatcher
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.koin.core.parameter.parametersOf
@@ -34,7 +30,7 @@ import org.koin.core.qualifier.named
 class AircraftFlowToTile38 : KoinComponent {
     private val log: Logger by inject { parametersOf(AircraftFlowToTile38::class.simpleName!!) }
 
-    private val aircraftFlowService: AircraftFlowService by inject(named("AirplanesLiveFlowService"))
+    private val clusterDispatcher: ClusterDispatcher by inject()
 
     private val spatialService: SpatialService by inject(named("SpatialService"))
 
@@ -43,11 +39,11 @@ class AircraftFlowToTile38 : KoinComponent {
     @OptIn(ExperimentalLettuceCoroutinesApi::class)
     fun start() {
         scope.launch {
-            aircraftFlowService.streamAircraft()
+            clusterDispatcher.streamAircraft()
                 .filter { it.status == FlowStatus.SUCCESS && it.data != null }
                 .collect { aircraftData ->
                     try {
-                        spatialService.sendAircrafts(aircraftData.data!!)
+                        spatialService.storeAircraft(aircraftData.data!!)
                     } catch (e: Exception) {
                         log.e(e) { "Failed to send aircraft data: ${e.message}" }
                     }

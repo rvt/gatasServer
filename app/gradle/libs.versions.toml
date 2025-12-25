@@ -12,16 +12,16 @@ kotlinx-coroutines-reactive = "1.7.3"
 protobuf-version = "3.25.8" #// ""4.31.1"
 grpc-kotlin-version = "1.4.3"
 okio-version = "3.16.0"
-gatas-library = "1.0.0"
+#gatas-library = "1.0.0"
 uber-h3 = "4.1.1"
 pdvrieze-serialization = "0.91.2"
-testcontainers-version = "1.19.0"
+testcontainers-version = "1.21.4"
 geok-version = "1.2.2"
 
 [libraries]
 geok = { module = "io.github.piruin:geok", version.ref = "geok-version" }
-gatas-library = { module = "nl.rvantwisk.gatas:gatas-library", version.ref = "gatas-library" }
-junit = { module = "junit:junit", version.ref = "junit" }
+#gatas-library = { module = "nl.rvantwisk.gatas:gatas-library", version.ref = "gatas-library" }
+#junit = { module = "junit:junit", version.ref = "junit" }
 
 # Dependency Injection
 ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor-version" }
@@ -82,6 +82,7 @@ okio-jvm = { group = "com.squareup.okio", name = "okio-jvm", version.ref = "okio
 
 uber-h3 = { group = "com.uber", name = "h3", version.ref = "uber-h3" }
 
+kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version = "0.4.1" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin-version" }

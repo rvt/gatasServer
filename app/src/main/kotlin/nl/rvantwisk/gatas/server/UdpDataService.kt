@@ -1,6 +1,6 @@
 package nl.rvantwisk.gatas.server
 
-import io.ktor.server.application.Application
+import io.ktor.server.application.*
 import nl.rvantwisk.gatas.server.flowservices.KtorClient.getKoin
 import nl.rvantwisk.gatas.server.udp.UdpAircraftService
 

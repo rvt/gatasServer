@@ -1,6 +1,6 @@
 package nl.rvantwisk.gatas.server.udp
 
-import io.ktor.network.sockets.InetSocketAddress
+import io.ktor.network.sockets.*
 import kotlin.time.Duration
 
 data class TokenBucket(

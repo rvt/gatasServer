@@ -1,7 +1,7 @@
 package nl.rvantwisk.gatas.server
 
-import io.ktor.server.application.Application
-import io.ktor.server.netty.EngineMain
+import io.ktor.server.application.*
+import io.ktor.server.netty.*
 import nl.rvantwisk.gatas.server.api.configureApi
 import nl.rvantwisk.gatas.server.api.configureStaticUi
 
@@ -10,7 +10,6 @@ fun main(args: Array<String>) {
 }
 
 fun Application.module() {
-  configureEgm2008()
   configureMonitoring()
   configureFrameworks()
   configureAdministration()

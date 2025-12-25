@@ -55,6 +55,8 @@ dependencies {
     implementation(libs.ktor.xml)
     implementation(libs.pdvrieze.serialization)
     implementation(libs.ktor.client.encoding.jvm)
+    implementation(libs.kotlinx.datetime)
+
 
     implementation(libs.ktor.network)
 //    implementation(libs.logback.classic)
@@ -70,13 +72,13 @@ dependencies {
     testImplementation(libs.testcontainers.junit.jupiter)
     testImplementation(libs.testcontainers.testcontainers) // Check for latest version
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
+
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.0")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation("io.mockk:mockk:1.14.7")
 
     testImplementation("io.insert-koin:koin-test:3.5.3")
-    // Specifically for JUnit 5 support (provides @JvmField and extension support)
     testImplementation("io.insert-koin:koin-test-junit5:3.5.3")
-
 
     implementation(libs.okio)
     implementation(libs.okio.jvm)

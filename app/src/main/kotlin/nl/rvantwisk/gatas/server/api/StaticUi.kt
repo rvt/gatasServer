@@ -1,8 +1,8 @@
 package nl.rvantwisk.gatas.server.api
 
-import io.ktor.server.application.Application
-import io.ktor.server.http.content.staticResources
-import io.ktor.server.routing.routing
+import io.ktor.server.application.*
+import io.ktor.server.http.content.*
+import io.ktor.server.routing.*
 
 /**
  * Configures the Ktor application to serve static UI resources.

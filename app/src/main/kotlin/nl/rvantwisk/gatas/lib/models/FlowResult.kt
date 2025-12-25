@@ -8,6 +8,9 @@ enum class FlowStatus {
     UNKNOWN_ERROR
 }
 
+/**
+ * Helps data class to send a Result dataset from a FLOW that allows to inspect if the flow item was correct or not
+ */
 data class FlowResult<T>(
   val source : String,
   val status: FlowStatus,

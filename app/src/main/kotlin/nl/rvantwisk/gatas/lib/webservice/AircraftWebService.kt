@@ -12,4 +12,6 @@ interface AircraftWebService {
      * Name of the webservice, used ofr logging or other display purpose
      */
     fun getName(): String
+
+    fun getMaxRadius(): Double
 }

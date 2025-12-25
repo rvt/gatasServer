@@ -1,17 +1,14 @@
 package nl.rvantwisk.gatas.lib.math
 
-import kotlin.math.PI
-import kotlin.math.atan2
-import kotlin.math.cos
-import kotlin.math.hypot
-import kotlin.math.sin
+import nl.rvantwisk.gatas.lib.models.LatLon
+import kotlin.math.*
 
 const val DEG_TO_RAD = PI.toDouble() / 180f
 const val RAD_TO_DEG = 180f / PI.toDouble()
 const val TWO_PI = (2 * PI).toDouble()
 
 data class DistanceRelNorthRelEastInt(
-    val distance: UInt,
+    val distance: Int,
     val relNorth: Int,
     val relEast: Int,
     val bearing: Int
@@ -33,7 +30,7 @@ fun bearingFromInRad(fromLat: Double, fromLon: Double, toLat: Double, toLon: Dou
 
     val y = sin(dLon) * cosToLat
     val x = cos(fromLatRad) * sin(toLatRad) -
-            sin(fromLatRad) * cosToLat * cos(dLon)
+        sin(fromLatRad) * cosToLat * cos(dLon)
 
     val bearingRad = atan2(y, x)
     return (bearingRad + TWO_PI) % TWO_PI
@@ -87,7 +84,7 @@ fun getDistanceRelNorthRelEastInt(
 
     val bearing = toBearing((drne.bearing + 0.5f).toInt())
     return DistanceRelNorthRelEastInt(
-        distance = (drne.distance + 0.5f).toUInt(),
+        distance = (drne.distance + 0.5f).toInt(),
         relNorth = (drne.relNorthMeter + 0.5f).toInt(),
         relEast = (drne.relEastMeter + 0.5f).toInt(),
         bearing = bearing
@@ -111,25 +108,25 @@ fun distanceFast(fromLat: Double, fromLon: Double, toLat: Double, toLon: Double)
     return hypot(ne.north, ne.east) // uses sqrt(n^2 + e^2)
 }
 
-
-data class BoundingBox(
-    val minLat: Double,
-    val maxLat: Double,
-    val minLon: Double,
-    val maxLon: Double
-)
-
-fun getBoundingBox(lat: Double, lon: Double, radiusMeters: Double): BoundingBox {
-    val degToRad = PI / 180.0
-    val latRad = lat * degToRad
-
-    val deltaLat = radiusMeters / 111_139.0
-    val deltaLon = radiusMeters / (cos(latRad) * 111_321.0)
-
-    return BoundingBox(
-        minLat = lat - deltaLat,
-        maxLat = lat + deltaLat,
-        minLon = lon - deltaLon,
-        maxLon = lon + deltaLon
-    )
+/**
+ * Returns the haversine distance between two coordinates in meters.
+ */
+fun LatLon.haversineDistance(p2: LatLon): Double {
+    val r = 6371.0 // Earth's radius in km
+    val dLat = Math.toRadians(p2.lat - this.lat)
+    val dLon = Math.toRadians(p2.lon - this.lon)
+    val a = sin(dLat / 2).pow(2) +
+        cos(Math.toRadians(this.lat)) * cos(Math.toRadians(p2.lat)) *
+        sin(dLon / 2).pow(2)
+    val c = 2 * atan2(sqrt(a), sqrt(1 - a))
+    return r * c * 1000.0
 }
+
+private fun List<LatLon>.nearestPointFromList(
+    target: LatLon,
+): LatLon? {
+    return this.minByOrNull { target.haversineDistance(it) }
+}
+
+fun List<LatLon>.sortedByDistanceFrom(ref: LatLon): List<LatLon> =
+    this.sortedBy { ref.haversineDistance(it) }

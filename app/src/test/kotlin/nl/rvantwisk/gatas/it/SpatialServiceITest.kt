@@ -1,4 +1,4 @@
-package com.example
+package nl.rvantwisk.gatas.it
 
 import co.touchlab.kermit.Logger
 import co.touchlab.kermit.Severity
@@ -12,22 +12,11 @@ import io.lettuce.core.api.coroutines
 import io.lettuce.core.codec.StringCodec
 import io.lettuce.core.output.StatusOutput
 import io.lettuce.core.protocol.CommandArgs
-import io.lettuce.core.protocol.CommandType
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
-import nl.rvantwisk.gatas.Tile38BaseIT
-import nl.rvantwisk.gatas.lib.extensions.DATA_SOURCE
-import nl.rvantwisk.gatas.server.AIRCRAFT_KEY
-import nl.rvantwisk.gatas.server.FLEET_CONFIG_KEY
-import nl.rvantwisk.gatas.server.FLEET_KEY
-import nl.rvantwisk.gatas.server.H3_AIRCRAFT_CELL_SIZE
-import nl.rvantwisk.gatas.server.METAR_BY_H3_KEY
-import nl.rvantwisk.gatas.server.METAR_BY_STATION_KEY
-import nl.rvantwisk.gatas.server.TimestampLogWriter
+import nl.rvantwisk.gatas.server.*
 import nl.rvantwisk.gatas.server.datastore.SpatialService
 import nl.rvantwisk.gatas.server.datastore.tile38.DROP
-import nl.rvantwisk.gatas.server.datastore.tile38.FSET
 import nl.rvantwisk.gatas.server.datastore.tile38.models.MetarH3
 import nl.rvantwisk.gatas.server.datastore.tile38.setJsonOutput
 import nl.rvantwisk.gatas.server.metar.model.Metar
@@ -36,7 +25,6 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertNull
-import org.koin.core.component.inject
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.core.qualifier.named
@@ -120,7 +108,7 @@ open class SpatialServiceITest : Tile38BaseIT(), KoinTest {
             longitude = 4.76,
             elevation_m = 100,
             sea_level_pressure_mb = 1012.12,
-            observation_time = Instant.parse("2023-09-01T12:00:00Z"),
+            observation_time = Instant.Companion.parse("2023-09-01T12:00:00Z"),
             raw_text = "",
             altim_in_hg = 0.0
         )
@@ -147,9 +135,11 @@ open class SpatialServiceITest : Tile38BaseIT(), KoinTest {
                 longitude = 4.76,
                 qnh = 1012.12,
                 elevation = 100,
-                observationTime = Instant.parse("2023-09-01T12:00:00Z")
+                observationTime = Instant.Companion.parse("2023-09-01T12:00:00Z")
             )
             assertEquals(expected, fields.first())
+
+            assertEquals(1012.12, spatialService.getNearbyQNH(52.0, 4.0))
         }
     }
 
@@ -167,7 +157,7 @@ open class SpatialServiceITest : Tile38BaseIT(), KoinTest {
                 longitude = 4.76,
                 qnh = 1012.12,
                 elevation = 100,
-                observationTime = Instant.parse("2023-09-01T12:00:00Z")
+                observationTime = Instant.Companion.parse("2023-09-01T12:00:00Z")
             )
             assertEquals(expected, metarh3)
         }
