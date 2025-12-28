@@ -33,6 +33,9 @@ fun Application.configureApi() {
         @Serializable
         data class AircraftReconfigure(val gatasId: Long, val newIcaoAdddress: Long)
 
+        @Serializable
+        data class GatasByPin(val lat: Double, val lon: Double, val pinCode: Int)
+
         post("/api/config/changeAircraft") {
             try {
                 val config = call.receive<AircraftReconfigure>()
@@ -62,10 +65,41 @@ fun Application.configureApi() {
                 gatasId,
                 listOf("options", "uniqueId", "icaoAddress", "icaoAddressList", "newIcaoAddress", "gatasIp")
             )
-            val mData = data.toMutableMap()
-            mData["gatasIp"] = (mData["gatasIp"] as Long).toIPv4();
-            mData["icaoAddressList"] = mData["icaoAddressList"]?.toString()?.split(",")?.map { it.trim() }
-            call.respond(mData.toJson())
+            if (data.isNotEmpty()) {
+                val mData = data.toMutableMap()
+                mData["gatasIp"] = (mData["gatasIp"] as Long).toIPv4();
+                mData["icaoAddressList"] = mData["icaoAddressList"]?.toString()?.split(",")?.map { it.trim() }
+                call.respond(mData.toJson())
+            } else {
+                call.respond(Ok())
+            }
+        }
+
+        post("/api/config/pinCode") {
+            runCatching {
+                val req = call.receive<GatasByPin>()
+
+                // Pincode requirement. Didn't want to make it to large or weird because that might defeat the purpose
+                // 0 will will disable pincode validation eg, users ar enot beable to use gatasCOnnect with Pincode for added security
+                if (req.pinCode !in 1000..999999) {
+                    call.respond(Ok())
+                }
+
+                spatialService
+                    .getFleetConfig(req.lat, req.lon, 100.0)
+                    .firstOrNull { it.pinCode == req.pinCode }
+            }.onSuccess { aircraft ->
+                if (aircraft != null) {
+                    call.respond(
+                        mapOf("gatasId" to aircraft.gatasId.toLong())
+                    )
+                } else {
+                    call.respond(Ok)
+                }
+            }.onFailure { e ->
+                application.log.error("Failed to handle by-pin request", e)
+                call.respond(Ok)
+            }
         }
 
     }

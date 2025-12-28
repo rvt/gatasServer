@@ -289,33 +289,53 @@ class SpatialService : KoinComponent {
     }
 
     @OptIn(ExperimentalLettuceCoroutinesApi::class)
-    fun sendAircraftConfig(
+    suspend fun setFleetConfig(
         lat: Double,
         lon: Double,
         data: OwnshipAircraftConfiguration,
     ) {
         val coroutines = redisClientWrite.coroutines()
-        scope.launch {
-            var cmdArgs = keyIdCmd(FLEET_CONFIG_KEY, data.gatasId)
-                .add("NX")
-                .add("POINT").add(lat).add(lon)
-            coroutines.dispatch(
-                CommandType.SET, StatusOutput(StringCodec.UTF8), cmdArgs
-            ).toList()
 
-            cmdArgs = keyIdCmd(FLEET_CONFIG_KEY, data.gatasId)
-                .add("options").add(data.options.toLong())
-                .add("uniqueId").add(data.gatasId.toLong())
-                .add("gatasIp").add(data.gatasIp.toLong())
-                .add("icaoAddress").add(data.icaoAddress.toLong())
-                .add("icaoAddressList").add(data.icaoAddressList.joinToString(","))
-                .add(DATA_SOURCE).add("gatas")
-//        .add("FIELD").add("json").add(json.encodeToString(OwnshipAircraftConfiguration.serializer(), data))
+        val cmdArgs = keyIdCmd(FLEET_CONFIG_KEY, data.gatasId)
+            .add("POINT").add(lat).add(lon)
+            .add("FIELD").add("options").add(data.options.toLong())
+            .add("FIELD").add("uniqueId").add(data.gatasId.toLong())
+            .add("FIELD").add("gatasIp").add(data.gatasIp.toLong())
+            .add("FIELD").add("pinCode").add(data.pinCode.toLong())
+            .add("FIELD").add("version").add(data.version.toLong())
+            .add("FIELD").add("icaoAddress").add(data.icaoAddress.toLong())
+            .add("FIELD").add("icaoAddressList").add(data.icaoAddressList.joinToString(","))
+            .add("FIELD").add(DATA_SOURCE).add("gatas")
+            .add("FIELD").add("json").add(json.encodeToString(OwnshipAircraftConfiguration.serializer(), data))
 
-            coroutines.dispatch(
-                FSET(), StatusOutput(StringCodec.UTF8), cmdArgs
-            ).toList()
-        }
+        coroutines.dispatch(
+            CommandType.SET /*FSET()*/, StatusOutput(StringCodec.UTF8), cmdArgs
+        ).toList()
+    }
+
+    @OptIn(ExperimentalLettuceCoroutinesApi::class, ExperimentalSerializationApi::class)
+    suspend fun getFleetConfig(
+        lat: Double,
+        lon: Double,
+        maxRadius: Double
+    ): List<OwnshipAircraftConfiguration> {
+        val coroutines = redisClientRead.coroutines()
+
+        val cmdArgs = CommandArgs(codec)
+            .add(FLEET_CONFIG_KEY)
+            .add("LIMIT").add(16)
+            .add("POINT").add(lat).add(lon)
+            .add(maxRadius)
+
+        val response = coroutines.dispatch(
+            NEARBY(),
+            ValueOutput(codec),
+            cmdArgs
+        ).toList()
+
+        val result =
+            json.decodeFromString<Tile38NearbyResult>(response.first()).fromJsonField<OwnshipAircraftConfiguration>()
+        return result
     }
 
     @OptIn(ExperimentalLettuceCoroutinesApi::class)

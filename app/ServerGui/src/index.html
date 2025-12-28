@@ -2,98 +2,151 @@
 <html lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">
 
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light dark">
-  <title>GA/TAS Server</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <title>GA/TAS Server</title>
 
-  <link rel="stylesheet" href="css/styles.scss" />
+    <link rel="stylesheet" href="css/styles.scss"/>
 </head>
 
 <body id="body" class="overflow-x-hidden">
-  <script>
+<script>
     if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
-      document.body.classList.add("dark");
+        document.body.classList.add("dark");
     }
-  </script>
+</script>
 
-  <main class="container">
+<main class="container">
     <gatasserver-main></gatasserver-main>
-  </main>
+</main>
 
 </body>
 
 <script type="module">
-  import { El } from "@frameable/el"
-  import store from "./components/store";
-  import "./components/aircraft"
+    import {El} from "@frameable/el"
+    import store from "./components/store";
+    import "./components/aircraft"
 
-  class GaTasMain extends El {
-    created() {
-      this.state = this.$observable({});
-    }
-
-    mounted() {
-      const form = this.shadowRoot?.getElementById("gatasForm") || this.querySelector("#gatasForm");
-
-      if (form) {
-        form.addEventListener("submit", (e) => {
-          e.preventDefault();
-          const gatasId = form.elements["gatasId"].value.trim();
-          if (!gatasId) return;
-
-          // update state and set hash
-          window.location.hash = encodeURIComponent(gatasId);
-          store.init(parseInt(gatasId, 16));
-        });
-      }
-
-      setTimeout(() => {
-        const gatasId = window.location.hash.substring(1);
-        if (gatasId && gatasId.length>0) {
-          store.init(parseInt(parseInt(window.location.hash.substring(1), 16)));
-          this.$refs.gatasId.value = store.state.gatasId.toString(16).toUpperCase();
+    class GaTasMain extends El {
+        created() {
+            //this.state = this.$observable({});
         }
-      }, 50);
+
+        _byPin() {
+
+            const pin = this.$refs.gatasId.value.trim();
+            if (!pin) return;
+
+            if (!("geolocation" in navigator)) {
+                alert("Geolocation is not supported by this browser.");
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const userLatitude = position.coords.latitude;
+                    const userLongitude = position.coords.longitude;
+                    store.getGatasIdByPin(userLatitude, userLongitude, Number(pin))
+                        .then((gatasId) => {
+                            const gatasIdHex = gatasId.toString(16).toUpperCase()
+                            this.$refs.gatasId.value = gatasIdHex
+                            window.location.hash = encodeURIComponent(gatasIdHex);
+                            return store.init(gatasId);
+                        })
+                        .catch(err => {
+                            store.clear();
+                            console.error(err);
+                            alert("Failed to resolve GA/TAS ID from pin.");
+                        });
+                },
+                (error) => {
+                    store.clear();
+                    switch (error.code) {
+                        case error.PERMISSION_DENIED:
+                            alert("Location permission denied. Cannot resolve pin code.");
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            alert("Location information is unavailable.");
+                            break;
+                        case error.TIMEOUT:
+                            alert("Location request timed out.");
+                            break;
+                        default:
+                            alert("Unknown geolocation error.");
+                    }
+                },
+                {
+                    enableHighAccuracy: false,
+                    timeout: 10_000,
+                    maximumAge: 60_000
+                }
+            );
+        }
+
+
+        _byId() {
+            const gatasId = this.$refs.gatasId.value.trim();
+            if (!gatasId) return;
+
+            // update state and set hash
+            window.location.hash = encodeURIComponent(gatasId);
+            store.init(parseInt(gatasId, 16))
+                .catch((e) => {
+                    store.clear();
+                });
+        }
+
+        mounted() {
+
+            setTimeout(() => {
+                const gatasId = window.location.hash.substring(1);
+                if (gatasId && gatasId.length > 0) {
+                    store.init(parseInt(parseInt(window.location.hash.substring(1), 16)));
+                    this.$refs.gatasId.value = store.state.gatasId.toString(16).toUpperCase();
+                }
+            }, 50);
+        }
+
+
+
+        _selected(mode_s) {
+            store.changeAircraft(mode_s);
+            if (this.onselect) {
+                this.onselect(mode_s)
+            }
+        }
+
+        render(html) {
+            return html`
+                <input name="gatasId" ref="gatasId" type="gatasId" placeholder="GA/TAS ID or pinCode" autocomplete=""/>
+                <div class="buttons">
+                    <div><button type="button" onclick=${() => this._byId()}>Find by ID</button></div>
+                    <div><button type="button" onclick=${() => this._byPin()}>Find by pin code</button></div>
+                </div>
+
+                <article>
+                    <small>
+                        <strong>GA/TAS IP:</strong>
+                        ${store.state.gatasIp
+                                ? html`<a href="http://${store.state.gatasIp}" target="_blank">
+                                    ${store.state.gatasIp}
+                                </a>`
+                                : html`not found`}
+                    </small>
+                </article>
+
+                <div class="button-container">
+                    ${store.state.icaoAddressList.map(item => html`
+                        <aircraft-config key=${item} modes=${item}
+                                         onclick=${() => this._selected(item)}></aircraft-config>
+                    `)}
+                </div>
+            `;
+        }
     }
 
-    _selected(mode_s) {
-      // debugger
-      // store.changeAircraft(mode_s)
-      // store.pollStatus();
-    }
-
-    render(html) {
-      return html`
-            <form id="gatasForm">
-              <fieldset role="group">
-                <input name="gatasId" ref="gatasId" type="gatasId" placeholder="GA/TAS ID" autocomplete="" />
-                <input type="submit" value="Find GA/TAS" />
-              </fieldset>
-            </form>
-
-            <article>
-              <small>
-                <strong>My GA/TAS IP:</strong>
-                ${store.state.gatasIp
-                  ? html`<a href="http://${store.state.gatasIp}" target="_blank">
-                          ${store.state.gatasIp}
-                        </a>`
-                  : html`not found`}
-                &nbsp;|&nbsp;
-                <a href="http://gatas.local" target="_blank">gatas.local</a>
-              </small>
-            </article>
-
-            <div class="button-container">
-              ${store.state.icaoAddressList.map(item => html`
-                <aircraft-config key=${item} modes=${item} onselect=${(mode_s) => this._selected(mode_s)}></aircraft-config>
-              `)}
-            </div>
-          `;
-    }
-  }
-  customElements.define("gatasserver-main", GaTasMain);
+    customElements.define("gatasserver-main", GaTasMain);
 </script>
 
 </html>

@@ -1,6 +1,11 @@
 package nl.rvantwisk.gatas.lib.extensions
 
-import nl.rvantwisk.gatas.lib.models.*
+import nl.rvantwisk.gatas.lib.models.AddressType
+import nl.rvantwisk.gatas.lib.models.AircraftCategory
+import nl.rvantwisk.gatas.lib.models.AircraftPosition
+import nl.rvantwisk.gatas.lib.models.OwnshipAircraftConfiguration
+import nl.rvantwisk.gatas.lib.models.OwnshipPosition
+import nl.rvantwisk.gatas.lib.models.SetIcaoAddressV1
 import kotlin.math.roundToInt
 
 /**
@@ -115,9 +120,43 @@ fun deserializeAircraftConfigurationV1(cobs: CobsByteArray): OwnshipAircraftConf
         options = options,
         newIcaoAddress = null,
         icaoAddressList = icaoAddressList,
-        gatasIp = gatasIp
+        gatasIp = gatasIp,
+        version = -1,
+        pinCode = -1
     )
 }
+
+fun deserializeAircraftConfigurationV2(cobs: CobsByteArray): OwnshipAircraftConfiguration {
+
+    val type = cobs.getInt1()
+    // Example: 04.00....
+    require(type == AIRCRAFT_CONFIGURATIONS_V2) { "Invalid type byte: $type" }
+
+    cobs.getInt1() // reserved
+
+    val gatasId = cobs.getUInt4()
+    val gatasIp = cobs.getUInt4()
+    val icaoAddress = cobs.getUInt3()
+
+    val version = cobs.getUInt4() // version
+    val pinCode = cobs.getUInt3() // version
+
+    val options = cobs.getUInt1()
+    val numberOfAddresses = cobs.getInt1()
+    val icaoAddressList = List(numberOfAddresses) { cobs.getUInt3() }
+
+    return OwnshipAircraftConfiguration(
+        gatasId = gatasId,
+        icaoAddress = icaoAddress,
+        options = options,
+        newIcaoAddress = null,
+        icaoAddressList = icaoAddressList,
+        gatasIp = gatasIp,
+        version = version.toInt(),
+        pinCode = pinCode.toInt()
+    )
+}
+
 
 fun SetIcaoAddressV1.serializeSetIcaoAddressV1(): ByteArray {
     val cobsBuffer = CobsByteArray(4)

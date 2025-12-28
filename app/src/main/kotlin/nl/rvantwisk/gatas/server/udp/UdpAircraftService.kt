@@ -178,7 +178,7 @@ class UdpAircraftService : KoinComponent {
                 runCatching {
                     val dataMsg = deserializeAircraftConfigurationV1(cobsByteArray)
 
-                    tile38.sendAircraftConfig(lat, lon, dataMsg)
+                    tile38.setFleetConfig(lat, lon, dataMsg)
                     val inDb = tile38.getFieldsMap("fleetConfig", dataMsg.gatasId, listOf("newIcaoAddress"))
 
                     val intValue: Int = (inDb["newIcaoAddress"] as? Int) ?: 0
@@ -189,6 +189,26 @@ class UdpAircraftService : KoinComponent {
                     }
                 }.onFailure {
                     log.w { "Error parsing AIRCRAFT_CONFIGURATIONS_V1 ${it.message}" }
+                }
+                continue
+            }
+
+            if (cobsByteArray.peekAhead() == AIRCRAFT_CONFIGURATIONS_V2) {
+                // log.i { "Found AIRCRAFT_CONFIGURATIONS_V2" }
+                runCatching {
+                    val dataMsg = deserializeAircraftConfigurationV2(cobsByteArray)
+
+                    tile38.setFleetConfig(lat, lon, dataMsg)
+                    val inDb = tile38.getFieldsMap("fleetConfig", dataMsg.gatasId, listOf("newIcaoAddress"))
+
+                    val intValue: Int = (inDb["newIcaoAddress"] as? Int) ?: 0
+                    val uintValue = intValue.toUInt()
+                    if (dataMsg.icaoAddress != uintValue && uintValue in dataMsg.icaoAddressList) {
+                        log.i { "Trying to configure GA/TAS" }
+                        returnedData += SetIcaoAddressV1(intValue.toUInt()).serializeSetIcaoAddressV1()
+                    }
+                }.onFailure {
+                    log.w { "Error parsing AIRCRAFT_CONFIGURATIONS_V2 ${it.message}" }
                 }
                 continue
             }

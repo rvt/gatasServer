@@ -5,6 +5,7 @@ import kotlin.math.PI
 const val AIRCRAFT_POSITION_TYPE_V1 = 1
 const val AIRCRAFT_POSITION_REQUEST_V1 = 2
 const val AIRCRAFT_CONFIGURATIONS_V1 = 3
+const val AIRCRAFT_CONFIGURATIONS_V2 = 4
 const val SET_ICAO_ADDRESS_V1 = 4
 
 // Variables name in REDIS store

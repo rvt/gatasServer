@@ -14,6 +14,7 @@ import io.lettuce.core.output.StatusOutput
 import io.lettuce.core.protocol.CommandArgs
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.runBlocking
+import nl.rvantwisk.gatas.lib.models.OwnshipAircraftConfiguration
 import nl.rvantwisk.gatas.server.*
 import nl.rvantwisk.gatas.server.datastore.SpatialService
 import nl.rvantwisk.gatas.server.datastore.tile38.DROP
@@ -170,6 +171,35 @@ open class SpatialServiceITest : Tile38BaseIT(), KoinTest {
             val h3Id = h3.latLngToCell(51.0, 4.0, H3_AIRCRAFT_CELL_SIZE)
 
             assertNull(spatialService.getMetarByH3(h3Id))
+        }
+    }
+
+    @OptIn(ExperimentalTime::class)
+    @Test
+    fun `Store and Fetch OwnshipConfig`() {
+        runBlocking {
+            var data = OwnshipAircraftConfiguration(
+                gatasId = 12345.toUInt(),
+                options = 0.toUInt(),
+                icaoAddress = 312134.toUInt(),
+                newIcaoAddress = null,
+                icaoAddressList = listOf(1.toUInt(), 2.toUInt()),
+                gatasIp = 67890.toUInt(),
+                pinCode = 1234,
+                version = 0,
+            )
+
+            // Initital set
+            spatialService.setFleetConfig(54.0, 4.0, data)
+            var result = spatialService.getFleetConfig(54.0, 4.0, 100.0)
+            assertEquals(1, result.size)
+            assertEquals(data, result.first())
+
+            // Update data and position
+            data = data.copy(icaoAddress = 12134.toUInt())
+            spatialService.setFleetConfig(54.0, 5.0, data)
+            result = spatialService.getFleetConfig(54.0, 5.0, 100.0)
+            assertEquals(data, result.first())
         }
     }
 }

@@ -5,7 +5,7 @@ let instance;
 export class GaTasStore {
   constructor() {
     if (instance) {
-      return 
+      return
     }
 
     instance = this;
@@ -20,6 +20,16 @@ export class GaTasStore {
       _pollingChanges: false,
       icaoAddressList: []
     });
+  }
+
+  clear() {
+      this.state.reConfiguring = false;
+      this.state.gatasId = false;
+      this.state.newIcaoAddress = null;
+      this.state.icaoAddress = 0;
+      this.state.gatasIp = 0;
+      this.state._pollingChanges = false;
+      this.state.icaoAddressList.length = 0;
   }
 
   /**
@@ -39,7 +49,6 @@ export class GaTasStore {
     this.state.gatasId = gatasId;
     return this.getOwnshipConfiguration();
   }
-
 
   /**
    * Get from the Mode-S code the aircrafts information using an external service
@@ -104,17 +113,23 @@ export class GaTasStore {
         this.state.gatasIp = data.gatasIp;
         return true
       });
-
-    // this.state.icaoAddress = 4738995
-    // this.state.newIcaoAddress = null
-    // this.state.icaoAddressList = [4738995, 4739478, 4744401]
-
-    // if (this.state.newIcaoAddress !== null && this.state.icaoAddress !== this.state.newIcaoAddress) {
-    //   this.state.reConfiguring = true;
-    // }
-
-    // return Promise.resolve(true)
   }
+
+  getGatasIdByPin(lat, lon, gatasPin) {
+        return store.fetch(`/api/config/pinCode`, {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                lat: lat,
+                lon: lon,
+                pinCode: gatasPin,
+            }),
+        }).then((data) => {
+            return data.gatasId
+        });
+    }
 
   pollStatus() {
     this.state._pollingChanges = true;

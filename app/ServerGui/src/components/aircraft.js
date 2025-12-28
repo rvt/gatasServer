@@ -13,14 +13,15 @@ class AircraftModule extends El {
   unmounted() {
   }
 
-  _select(mode_s) {
-    if (!this._isCurrent()) {
-      store.changeAircraft(mode_s);
-      if (this.onselect) {
-        this.onselect(mode_s)
-      }
-    }
-  }
+  // _select() {
+  //   let mode_s = this.state.aircraft?.icaoAddress
+  //   if (!this._isCurrent()) {
+  //     store.changeAircraft(mode_s);
+  //     if (this.onselect) {
+  //       this.onselect(mode_s)
+  //     }
+  //   }
+  // }
 
   async _fetchData() {
     if (this.modes) {
@@ -35,19 +36,16 @@ class AircraftModule extends El {
     }
   }
 
-  _isCurrent() {
-    // Weird equal issue, using == for the moment
-    return store.state.icaoAddress == this.state.aircraft?.icaoAddress;
-  }
-
+    _isCurrent() {
+        // Weird equal issue, using == for the moment
+        return store.state.icaoAddress == this.state.aircraft?.icaoAddress;
+    }
 
   render(html) {
     const isCurrent = this._isCurrent();
     const isPending = this.state.aircraft?.icaoAddress === store.state.newIcaoAddress && !this._isCurrent();
     return html`
-      <article
-        class="${isCurrent && 'selected'} ${isPending && 'pending'}"
-        onclick=${() => this._select(this.state.aircraft?.icaoAddress)}>
+      <article class="${isCurrent && 'selected'} ${isPending && 'pending'}" >
         ${isPending ? html`<progress></progress>` : html`<progress value=0" max="100"></progress>`}
         <div>${this.state.aircraft?.registration}</div>
         <div>${this.state.aircraft?.icaoType}</div>
