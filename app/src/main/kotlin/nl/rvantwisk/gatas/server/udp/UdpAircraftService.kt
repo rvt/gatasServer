@@ -139,7 +139,7 @@ class UdpAircraftService : KoinComponent {
 
             val cobsByteArray = CobsByteArray(msg)
 
-            if (cobsByteArray.peekAhead() == AIRCRAFT_POSITION_REQUEST_V1) {
+            if (cobsByteArray.peekAhead() == MessageType.AIRCRAFT_POSITION_REQUEST_V1.value) {
                 // log.i { "Found AIRCRAFT_POSITION_REQUEST_V1" }
                 runCatching {
                     val metarCache = metarCacheFactoryService.cacheFactory()
@@ -155,13 +155,13 @@ class UdpAircraftService : KoinComponent {
                         altitudeService.updateEstimGeomAltitude(it, metarCache.getQNH(it.latitude, it.longitude))
                         it
                     }.filterByDistanceOnGround(
-                            ownship.latitude, ownship.longitude, REQUEST_GROUND_DIST, REQUEST_MAX_DIST
-                        ).sortedBy { position ->
-                            val rel = distanceFast(
-                                ownship.latitude, ownship.longitude, position.latitude, position.longitude
-                            )
-                            rel
-                        }.take(REQUEST_MAX_AIRCRAFT)
+                        ownship.latitude, ownship.longitude, REQUEST_GROUND_DIST, REQUEST_MAX_DIST
+                    ).sortedBy { position ->
+                        val rel = distanceFast(
+                            ownship.latitude, ownship.longitude, position.latitude, position.longitude
+                        )
+                        rel
+                    }.take(REQUEST_MAX_AIRCRAFT)
                     if (aircrafts.isEmpty()) {
                         log.i { "No aircrafts found around ownship ${ownship.latitude} ${ownship.longitude}" }
                     }
@@ -173,7 +173,7 @@ class UdpAircraftService : KoinComponent {
                 continue
             }
 
-            if (cobsByteArray.peekAhead() == AIRCRAFT_CONFIGURATIONS_V1) {
+            if (cobsByteArray.peekAhead() == MessageType.AIRCRAFT_CONFIGURATIONS_V1.value) {
                 // log.i { "Found AIRCRAFT_CONFIGURATIONS_V1" }
                 runCatching {
                     val dataMsg = deserializeAircraftConfigurationV1(cobsByteArray)
@@ -193,7 +193,7 @@ class UdpAircraftService : KoinComponent {
                 continue
             }
 
-            if (cobsByteArray.peekAhead() == AIRCRAFT_CONFIGURATIONS_V2) {
+            if (cobsByteArray.peekAhead() == MessageType.AIRCRAFT_CONFIGURATIONS_V2.value) {
                 // log.i { "Found AIRCRAFT_CONFIGURATIONS_V2" }
                 runCatching {
                     val dataMsg = deserializeAircraftConfigurationV2(cobsByteArray)
@@ -215,7 +215,7 @@ class UdpAircraftService : KoinComponent {
         }
 
         val elapsed = (timeSource.markNow() - markStart).inWholeMilliseconds
-        log.i { "Sending ${returnedData.size} bytes, $numAircraft Aircraft, took %dms  to $sender ".format(elapsed) }
+        log.i { "Sending ${returnedData.size} bytes, $numAircraft Aircraft, took ${elapsed}ms  to $sender " }
         return returnedData
     }
 

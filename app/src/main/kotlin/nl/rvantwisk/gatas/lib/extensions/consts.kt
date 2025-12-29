@@ -2,11 +2,14 @@ package nl.rvantwisk.gatas.lib.extensions
 
 import kotlin.math.PI
 
-const val AIRCRAFT_POSITION_TYPE_V1 = 1
-const val AIRCRAFT_POSITION_REQUEST_V1 = 2
-const val AIRCRAFT_CONFIGURATIONS_V1 = 3
-const val AIRCRAFT_CONFIGURATIONS_V2 = 4
-const val SET_ICAO_ADDRESS_V1 = 4
+// Always add a new version, and comment put the deprecated version ONLY if we don't receive traffic anymore
+enum class MessageType(val value: Int) {
+    AIRCRAFT_POSITION_TYPE_V1(1),
+    AIRCRAFT_POSITION_REQUEST_V1(2),
+    AIRCRAFT_CONFIGURATIONS_V1(3),
+    SET_ICAO_ADDRESS_V1(4),
+    AIRCRAFT_CONFIGURATIONS_V2(5)
+}
 
 // Variables name in REDIS store
 const val CRC16_BYTE_SIZE = 2

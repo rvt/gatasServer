@@ -26,11 +26,28 @@
 <script type="module">
     import {El} from "@frameable/el"
     import store from "./components/store";
+    import "./components/buttonloader";
     import "./components/aircraft"
 
+    const isOpenClass = "modal-is-open";
+    const openingClass = "modal-is-opening";
+    const closingClass = "modal-is-closing";
+    const animationDuration = 400;
+
     class GaTasMain extends El {
+
         created() {
-            //this.state = this.$observable({});
+            this.state = this.$observable({
+                loading: false,
+                showAlert: false,
+                alertText: ''
+            });
+        }
+
+        _isNumeric(str) {
+            if (typeof str != "string") return false // we only process strings!
+            return !isNaN(str) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...
+                !isNaN(parseFloat(str)) // ...and ensure strings of whitespace fail
         }
 
         _byPin() {
@@ -38,11 +55,16 @@
             const pin = this.$refs.gatasId.value.trim();
             if (!pin) return;
 
-            if (!("geolocation" in navigator)) {
-                alert("Geolocation is not supported by this browser.");
-                return;
+            if (!this._isNumeric(pin)) {
+                this._showAlert("Pin code must be a numeric value between 1000 and 999999.");
+                return
             }
 
+            if (!("geolocation" in navigator)) {
+                this._showAlert("Geolocation is not supported by this browser.");
+                return;
+            }
+            this.state.loading = true;
             navigator.geolocation.getCurrentPosition(
                 (position) => {
                     const userLatitude = position.coords.latitude;
@@ -56,34 +78,36 @@
                         })
                         .catch(err => {
                             store.clear();
-                            console.error(err);
-                            alert("Failed to resolve GA/TAS ID from pin.");
+                            this._showAlert("Failed to resolve GA/TAS ID from pin.");
+                        })
+                        .finally(() => {
+                            this.state.loading = false;
                         });
                 },
                 (error) => {
                     store.clear();
+                    this.state.loading = false;
                     switch (error.code) {
                         case error.PERMISSION_DENIED:
-                            alert("Location permission denied. Cannot resolve pin code.");
+                            this._showAlert("Location permission denied. Please enable location permissions to enable this functionality.");
                             break;
                         case error.POSITION_UNAVAILABLE:
-                            alert("Location information is unavailable.");
+                            this._showAlert("Location information is unavailable.");
                             break;
                         case error.TIMEOUT:
-                            alert("Location request timed out.");
+                            this._showAlert("Request timed out to GA/TAS Connect.");
                             break;
                         default:
-                            alert("Unknown geolocation error.");
+                            this._showAlert("Unknown error, please try again");
                     }
                 },
                 {
-                    enableHighAccuracy: false,
-                    timeout: 10_000,
-                    maximumAge: 60_000
+                    enableHighAccuracy: true,
+                    timeout: 5_000,
+                    maximumAge: 0
                 }
             );
         }
-
 
         _byId() {
             const gatasId = this.$refs.gatasId.value.trim();
@@ -91,14 +115,23 @@
 
             // update state and set hash
             window.location.hash = encodeURIComponent(gatasId);
+            this.state.loading = true;
             store.init(parseInt(gatasId, 16))
                 .catch((e) => {
+                    this._showAlert("Error communicating with gatas Connect");
                     store.clear();
+                })
+                .finally(() => {
+                    this.state.loading = false;
                 });
         }
 
-        mounted() {
+        _showAlert(text) {
+            this.state.alertText = text;
+            this.state.showAlert = true;
+        }
 
+        mounted() {
             setTimeout(() => {
                 const gatasId = window.location.hash.substring(1);
                 if (gatasId && gatasId.length > 0) {
@@ -109,7 +142,6 @@
         }
 
 
-
         _selected(mode_s) {
             store.changeAircraft(mode_s);
             if (this.onselect) {
@@ -117,12 +149,44 @@
             }
         }
 
-        render(html) {
+        alert(html) {
             return html`
+                <dialog id="modal-example" ref="alertModal" ${this.state.showAlert ? 'open' : ''}>
+                    <article>
+                        <header>
+                            <button
+                                    aria-label="Close"
+                                    rel="prev"
+                                    data-target="modal-example"
+                                    onclick=${() => this.state.showAlert = false}
+                            ></button>
+                            <h3>Error</h3>
+                        </header>
+                        <p>
+                            ${this.state.alertText}
+                        </p>
+                        <footer>
+                            <button autoFocus data-target="modal-example" onclick=${() => this.state.showAlert = false}>
+                                Close
+                            </button>
+                        </footer>
+                    </article>
+                </dialog>`;
+        }
+
+        render(html) {
+            return this.alert(html) + html`
                 <input name="gatasId" ref="gatasId" type="gatasId" placeholder="GA/TAS ID or pinCode" autocomplete=""/>
                 <div class="buttons">
-                    <div><button type="button" onclick=${() => this._byId()}>Find by ID</button></div>
-                    <div><button type="button" onclick=${() => this._byPin()}>Find by pin code</button></div>
+                    <div>
+                        <button-loader key="btnById" loading="${this.state.loading}" onclick=${this._byId}>Find by ID
+                        </button-loader>
+                    </div>
+                    <div>
+                        <button-loader key="btnByPin" loading="${this.state.loading}" onclick=${this._byPin}>Find by pin
+                            code
+                        </button-loader>
+                    </div>
                 </div>
 
                 <article>

@@ -30,6 +30,7 @@ class AircraftModule extends El {
 
       store.icaoAircraftInfo(this.modes)
         .then((data) => {
+
           data.icaoAddressHex = parseInt(data.icaoAddress).toString(16).toUpperCase().padStart(6, '0');
           Object.assign(this.state.aircraft, data);
         })
@@ -38,7 +39,7 @@ class AircraftModule extends El {
 
     _isCurrent() {
         // Weird equal issue, using == for the moment
-        return store.state.icaoAddress == this.state.aircraft?.icaoAddress;
+        return store.state.icaoAddress === this.state.aircraft?.icaoAddress;
     }
 
   render(html) {

@@ -1,8 +1,10 @@
 package nl.rvantwisk.gatas.server.api
 
+import co.touchlab.kermit.Logger
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.plugins.contentnegotiation.*
+import io.ktor.server.plugins.ratelimit.RateLimit
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -11,13 +13,18 @@ import kotlinx.serialization.json.*
 import nl.rvantwisk.gatas.server.FLEET_CONFIG_KEY
 import nl.rvantwisk.gatas.server.datastore.SpatialService
 import nl.rvantwisk.gatas.server.extensions.toIPv4
+import org.koin.core.parameter.parametersOf
 import org.koin.core.qualifier.named
 import org.koin.ktor.ext.inject
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.ExperimentalTime
+import kotlin.time.TimeSource
 
-@OptIn(ExperimentalStdlibApi::class)
+@OptIn(ExperimentalStdlibApi::class, ExperimentalTime::class)
 fun Application.configureApi() {
 
     val spatialService by inject<SpatialService>(named("SpatialService"))
+    val log: Logger by inject { parametersOf(Application::class.simpleName!!) }
 
     install(ContentNegotiation) {
         json(Json {
@@ -27,6 +34,11 @@ fun Application.configureApi() {
         })
     }
 
+    install(RateLimit) {
+        global {
+            rateLimiter(limit = 60, refillPeriod = 60.seconds)
+        }
+    }
 
     routing {
 
@@ -41,9 +53,9 @@ fun Application.configureApi() {
                 val config = call.receive<AircraftReconfigure>()
                 spatialService.changeAircraft(config.gatasId, config.newIcaoAdddress.toUInt())
             } catch (e: Exception) {
-                print(e)
+                log.w { "Failed to change Aircraft config ${e.message}" }
             }
-            call.respond(Ok())
+            call.respond(ApiResult.Ok(""))
         }
 
         /**
@@ -69,39 +81,40 @@ fun Application.configureApi() {
                 val mData = data.toMutableMap()
                 mData["gatasIp"] = (mData["gatasIp"] as Long).toIPv4();
                 mData["icaoAddressList"] = mData["icaoAddressList"]?.toString()?.split(",")?.map { it.trim() }
-                call.respond(mData.toJson())
+                call.respond(ApiResult.Ok(mData.toJson()))
             } else {
-                call.respond(Ok())
+                call.respond(ApiResult.Failed("Invalid"))
             }
         }
 
         post("/api/config/pinCode") {
-            runCatching {
+            val timeSource = TimeSource.Monotonic
+            val markStart = timeSource.markNow()
+            try {
                 val req = call.receive<GatasByPin>()
 
-                // Pincode requirement. Didn't want to make it to large or weird because that might defeat the purpose
-                // 0 will will disable pincode validation eg, users ar enot beable to use gatasCOnnect with Pincode for added security
                 if (req.pinCode !in 1000..999999) {
-                    call.respond(Ok())
+                    call.respond(ApiResult.Failed("Not in range"))
+                    return@post
                 }
 
-                spatialService
-                    .getFleetConfig(req.lat, req.lon, 100.0)
+                val aircraft = spatialService
+                    .getFleetConfig(req.lat, req.lon, 200.0)
                     .firstOrNull { it.pinCode == req.pinCode }
-            }.onSuccess { aircraft ->
+
                 if (aircraft != null) {
-                    call.respond(
-                        mapOf("gatasId" to aircraft.gatasId.toLong())
-                    )
+                    call.respond(ApiResult.Ok(mapOf("gatasId" to aircraft.gatasId.toLong())))
                 } else {
-                    call.respond(Ok)
+                    call.respond(ApiResult.Failed("Not found"))
                 }
-            }.onFailure { e ->
-                application.log.error("Failed to handle by-pin request", e)
-                call.respond(Ok)
+            } catch (e: Exception) {
+                log.w { "Failed to handle by-pin request ${e.message}" }
+                call.respond(ApiResult.Failed("Failed"))
+            } finally {
+                val elapsed = (timeSource.markNow() - markStart).inWholeMilliseconds
+                log.i { "by-pin request took total ${elapsed}ms" }
             }
         }
-
     }
 }
 
@@ -145,5 +158,22 @@ fun Map<String, Any?>.toJson(): JsonObject = buildJsonObject {
 }
 
 @Serializable
-data class Ok(val status: String = "Ok")
+sealed class ApiResult<out T> {
+
+    abstract val ok: Boolean
+
+    @Serializable
+    data class Ok<T>(
+        val data: T
+    ) : ApiResult<T>() {
+        override val ok: Boolean = true
+    }
+
+    @Serializable
+    data class Failed(
+        val reason: String
+    ) : ApiResult<Nothing>() {
+        override val ok: Boolean = false
+    }
+}
 

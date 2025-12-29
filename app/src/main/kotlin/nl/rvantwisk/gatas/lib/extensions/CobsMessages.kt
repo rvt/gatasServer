@@ -22,7 +22,7 @@ fun AircraftPosition.serializeAircraftPositionV1(): ByteArray {
     val cobsBuffer = CobsByteArray(RAW_ARRAY_SIZE + callSignBytes.size)
 
     // @formatter:off
-  cobsBuffer.put1(AIRCRAFT_POSITION_TYPE_V1)
+  cobsBuffer.put1(MessageType.AIRCRAFT_POSITION_TYPE_V1.value)
   cobsBuffer.putUInt3(id)
   cobsBuffer.put1(addressType.value.toByte())
   cobsBuffer.put1(dataSource.value.toByte())
@@ -71,7 +71,7 @@ fun AircraftPosition.serializeAircraftPositionV1(): ByteArray {
 fun deserializeOwnshipPositionV1(cobs: CobsByteArray): OwnshipPosition {
 
     val type = cobs.getInt1()
-    require(type == AIRCRAFT_POSITION_REQUEST_V1) { "Invalid type byte: $type" }
+    require(type == MessageType.AIRCRAFT_POSITION_REQUEST_V1.value) { "Invalid type byte: $type" }
 
     val epoch = cobs.getUInt4()
     val address = cobs.getInt3()
@@ -105,7 +105,7 @@ fun deserializeAircraftConfigurationV1(cobs: CobsByteArray): OwnshipAircraftConf
 
     val type = cobs.getInt1()
     // Example: 03.de.e8.ba.1f.00.00.00.00.ff.ff.ff.01
-    require(type == AIRCRAFT_CONFIGURATIONS_V1) { "Invalid type byte: $type" }
+    require(type == MessageType.AIRCRAFT_CONFIGURATIONS_V1.value) { "Invalid type byte: $type" }
 
     val gatasId = cobs.getUInt4()
     val gatasIp = cobs.getUInt4()
@@ -130,7 +130,7 @@ fun deserializeAircraftConfigurationV2(cobs: CobsByteArray): OwnshipAircraftConf
 
     val type = cobs.getInt1()
     // Example: 04.00....
-    require(type == AIRCRAFT_CONFIGURATIONS_V2) { "Invalid type byte: $type" }
+    require(type == MessageType.AIRCRAFT_CONFIGURATIONS_V2.value) { "Invalid type byte: $type" }
 
     cobs.getInt1() // reserved
 
@@ -160,7 +160,7 @@ fun deserializeAircraftConfigurationV2(cobs: CobsByteArray): OwnshipAircraftConf
 
 fun SetIcaoAddressV1.serializeSetIcaoAddressV1(): ByteArray {
     val cobsBuffer = CobsByteArray(4)
-    cobsBuffer.put1(SET_ICAO_ADDRESS_V1)
+    cobsBuffer.put1(MessageType.SET_ICAO_ADDRESS_V1.value)
     cobsBuffer.putUInt3(this.icaoAddress)
     return cobsBuffer.getCobs()
 }

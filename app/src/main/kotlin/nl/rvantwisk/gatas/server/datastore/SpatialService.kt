@@ -345,12 +345,11 @@ class SpatialService : KoinComponent {
             val cmdArgs = keyIdCmd(FLEET_CONFIG_KEY, gatasId)
                 .add("newIcaoAddress").add(newIcaoAdddress.toLong())
 
-            val ok = coroutines.dispatch(
+            coroutines.dispatch(
                 FSET(),
                 StatusOutput(StringCodec.UTF8),
                 cmdArgs
             ).toList()
-            print(ok)
         } catch (e: Exception) {
             log.w { "Error sending metar to Tile38: ${e.message}" }
         }
@@ -367,13 +366,10 @@ class SpatialService : KoinComponent {
         fields: List<String>
     ): Map<String, Any?> {
 
-        val cmdArgs = keyIdCmd(key, id)
-            .add("WITHFIELDS")
-
         val response = redisClientRead.coroutines().dispatch(
             GET(),
             ValueOutput(codec),
-            cmdArgs
+            keyIdCmd(key, id).add("WITHFIELDS")
         ).firstOrNull()
 
         if (response == null) return emptyMap()

@@ -93,25 +93,28 @@ export class GaTasStore {
         gatasId: this.state.gatasId,
         newIcaoAdddress: icaoCode
       }),
-    }).then((data) => {
+    }).then((_) => {
       this.state.reConfiguring = true;
       this.pollStatus();
-        return true
+      return true
     });
   }
 
   getOwnshipConfiguration() {
 
     return store.fetch(`/api/config/aircraftConfiguration/${this.state.gatasId}`)
-      .then((data) => {
-        this.state.icaoAddressList.length = 0;
-        data.icaoAddressList.forEach( (e) => {
-          this.state.icaoAddressList.push(parseInt(e));
-        })
-        this.state.icaoAddress = parseInt(data.icaoAddress);
-        this.state.newIcaoAddress = parseInt(data.newIcaoAddress);
-        this.state.gatasIp = data.gatasIp;
-        return true
+      .then((resp) => {
+          if (resp.ok) {
+              this.state.icaoAddressList.length = 0;
+              resp.data.icaoAddressList.forEach( (e) => {
+                  this.state.icaoAddressList.push(parseInt(e));
+              })
+              this.state.icaoAddress = parseInt(resp.data.icaoAddress);
+              this.state.newIcaoAddress = parseInt(resp.data.newIcaoAddress);
+              this.state.gatasIp = resp.data.gatasIp;
+              return true
+          }
+          throw "Failed"
       });
   }
 
@@ -126,8 +129,11 @@ export class GaTasStore {
                 lon: lon,
                 pinCode: gatasPin,
             }),
-        }).then((data) => {
-            return data.gatasId
+        }).then((resp) => {
+            if (resp.ok) {
+                return resp.data.gatasId
+            }
+            throw "Data not found"
         });
     }
 
@@ -138,12 +144,15 @@ export class GaTasStore {
 
   __pollStatus() {
     this.fetch(`/api/config/aircraftConfiguration/${this.state.gatasId}`)
-      .then((data) => {
-        if (data.newIcaoAddress === data.icaoAddress || data.newIcaoAddress === undefined) {
-          this.state._pollingChanges = false;
-          this.state.reConfiguring = false;
-          this.getOwnshipConfiguration();
-        }
+      .then((resp) => {
+          if (resp.ok) {
+              if (resp.data.newIcaoAddress === resp.data.icaoAddress || resp.data.newIcaoAddress === undefined) {
+                  this.state._pollingChanges = false;
+                  this.state.reConfiguring = false;
+                  this.getOwnshipConfiguration();
+              }
+          }
+          throw "Failed"
       })
       .finally(() => {
         if (this.state._pollingChanges) {
@@ -163,8 +172,14 @@ export class GaTasStore {
    */
   fetch(path, requestOptions) {
     return fetch(path, {
-      ...requestOptions,
-      signal: AbortSignal.timeout(5500),
+        ...requestOptions,
+        signal: AbortSignal.timeout(5500),
+        cache: "no-store",          // browser cache
+        headers: {
+            ...(requestOptions?.headers ?? {}),
+            "Cache-Control": "no-store, no-cache, max-age=0",
+            "Pragma": "no-cache",     // legacy / proxies
+        },
     })
     .then((response) => {
       if (!response.ok) {

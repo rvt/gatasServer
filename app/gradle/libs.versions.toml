@@ -33,7 +33,8 @@ micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-p
 
 # ktor/serialisation
 koin-ktor = { module = "io.insert-koin:koin-ktor", version.ref = "koin-version" }
-ktor-server-rate-limiting = { module = "io.github.flaxoos:ktor-server-rate-limiting", version = "2.2.1" }
+#ktor-server-rate-limiting = { module = "io.github.flaxoos:ktor-server-rate-limiting", version = "2.2.1" }
+ktor-server-rate-limiting = { module = "io.ktor:ktor-server-rate-limit", version.ref = "ktor-version" }
 ktor-server-thymeleaf = { module = "io.ktor:ktor-server-thymeleaf", version.ref = "ktor-version" }
 ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor-version" }
 ktor-server-config-yaml = { module = "io.ktor:ktor-server-config-yaml", version.ref = "ktor-version" }
